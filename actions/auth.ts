@@ -51,3 +51,21 @@ export async function initiateGoogleOAuth(): Promise<void> {
 export async function initiateGitHubOAuth(): Promise<void> {
   await initiateOAuth("github");
 }
+
+export async function signOut(): Promise<void> {
+  const cookieStore = await cookies();
+
+  try {
+    const auth = createAuthActions({ cookies: cookieStore });
+    const { error } = await auth.signOut();
+
+    if (error) {
+      console.error("[actions/auth] signOut", error);
+    }
+  } catch (error) {
+    console.error("[actions/auth] signOut", error);
+  }
+
+  cookieStore.delete("insforge_code_verifier");
+  redirect("/login");
+}

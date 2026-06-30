@@ -137,3 +137,63 @@ Last updated: 2026-06-29
 
 **Pattern notes:**
 This is a non-visual backend feature. It creates the owner-scoped InsForge tables and private resume storage bucket used by later UI phases, but it should not introduce layout, classes, or visible components.
+
+### Profile Page Full UI
+
+File: app/profile/page.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-background` for page, `bg-surface` for cards and controls, `bg-surface-secondary` for upload and nested role panels |
+| Border           | `border-border`, `border-error/20`, `border-dashed` for upload dropzone |
+| Border radius    | `rounded-xl` for cards, upload area, major buttons, and chips; `rounded-lg` for form controls |
+| Text — primary   | `text-text-primary`, `text-text-dark` |
+| Text — secondary | `text-text-secondary`, `text-text-muted` |
+| Spacing          | `px-6 py-8` page shell, `p-8` cards, `space-y-8` between cards, `space-y-16` between form sections, `gap-6` form grid |
+| Hover state      | none for mock controls in Feature 05 |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `bg-accent`, `text-accent`, `border-accent`, SVG progress stroke using `var(--color-error)`, `text-error`, `bg-error/5` |
+
+**Pattern notes:**
+The profile page follows the delivered `context/designs/profile.png` mock as source of truth. It uses the retina-scaled centered content column (`max-w-[936px]`) inside the protected page background, white card surfaces, 16px form control text, uppercase 12px labels, and visual-only mock controls. The completion indicator uses layered SVG circles with rounded stroke caps so progress arcs match the design instead of hard-ended conic gradients.
+
+### Profile Save Form
+
+File: components/profile/ProfileForm.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface` for cards and controls, `bg-surface-secondary` for upload zones, role panels, add buttons, and status messages |
+| Border           | `border-border`, `border-error/20`, `border-success/20`, `border-dashed` for upload dropzone |
+| Border radius    | `rounded-xl` for cards, upload area, major buttons, and role panels; `rounded-lg` for form controls and chips |
+| Text — primary   | `text-text-primary`, `text-text-dark` |
+| Text — secondary | `text-text-secondary`, `text-text-muted` |
+| Spacing          | `p-8` cards, `px-8 py-9` banner, `space-y-8` page form stack, `space-y-16` form sections, `gap-6` form grid |
+| Hover state      | `hover:bg-error/10` and `focus:ring-error` for clickable missing-field chips; additive chip buttons rely on explicit click affordance and focus rings |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `bg-accent`, `text-accent`, `border-accent`, `focus:ring-accent`, `text-error`, `text-success`, SVG strokes using token CSS variables |
+
+**Pattern notes:**
+Feature 06 preserves the Feature 05 visual shell while moving editable controls into `components/profile/ProfileForm.tsx`. Scalar inputs and selects are controlled client state, with hidden JSON inputs for tag arrays and work experience, and `useActionState` for save feedback. Select controls keep the same 40px tokenized form-control shell but use select-specific cursor/appearance/pr classes so native dropdown hit areas remain reliable. Resume upload uses a styled label that matches the existing secondary button pattern while the real file input stays visually hidden. Missing-field chips in the attention banner behave as compact navigation buttons: they keep the badge styling, scroll to the relevant form section, and focus the first useful input in that section. The completion ring keeps `text-[34px]` for normal percentages and uses a centered `w-20 text-[30px]` treatment for `100%` so complete-state text stays inside the circle.
+
+### Protected Header
+
+File: components/layout/ProtectedHeader.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface` |
+| Border           | `border-border` |
+| Border radius    | `rounded-md` for sign out button |
+| Text — primary   | `text-text-primary`, `text-text-dark` |
+| Text — secondary | none |
+| Spacing          | `px-6 py-4`, `gap-4`, `gap-6`, `sm:gap-8` |
+| Hover state      | `hover:bg-surface-secondary` |
+| Shadow           | `shadow-sm` on sign out button |
+| Accent usage     | `text-accent` for active protected nav item |
+
+**Pattern notes:**
+Protected pages share this header for authenticated navigation and logout. The sign out control is a Server Action form button so it clears SSR auth cookies without adding client-side auth state. Dashboard, Find Jobs, Job Details, and Profile should use this component until a later full-page UI phase replaces the surrounding content.

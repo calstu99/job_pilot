@@ -1,50 +1,46 @@
-# Memory — Database Schema
+# Memory — Feature 06 Profile Save Logic
 
-Last updated: 2026-06-28 23:36 PDT
+Last updated: 2026-06-29 20:59 PDT
 
 ## What was built
 
-Completed Feature 04 Database Schema from Phase 1.
+Completed Feature 06 Profile Save Logic from Phase 2.
 
-- Created and applied InsForge migration `migrations/20260629062950_create-jobpilot-schema.sql`.
-- Added `profiles` table keyed to `auth.users(id)`.
-- Added `agent_runs` table for manually triggered job searches.
-- Added `jobs` table for discovered job records and later company research enrichment.
-- Added `agent_logs` table for human-readable agent activity and errors.
-- Added `resume_pdf_key` to `profiles` alongside `resume_pdf_url` so future upload logic can persist both InsForge Storage values.
-- Added indexes for owner-scoped dashboard, job list, run, score, and log queries.
-- Enabled RLS on all four app tables.
-- Added authenticated owner-only policies for select/insert/update/delete where appropriate.
-- Added column-level update grants so clients cannot update protected ownership or identity fields.
-- Added composite owner consistency constraints so `jobs` and `agent_logs` cannot point at another user's run/job rows.
-- Created private InsForge Storage bucket `resumes`.
-- Updated project docs:
-  - `context/progress-tracker.md` marks `04 Database Schema` complete and `05 Profile Page — Full UI` next.
-  - `context/ui-registry.md` documents the non-visual database schema feature.
+- Added `actions/profile.ts` for the profile save Server Action.
+- Added `lib/profile.ts` for profile view-model normalization, option values, completion calculation, and shared profile types.
+- Reworked `/profile` in `app/profile/page.tsx` to load the authenticated user's `profiles` row, normalize it, and pass it into the client form.
+- Added `components/profile/ProfileForm.tsx` as the editable profile form:
+  - Personal Info, Professional Info, Work Experience, Education, and Job Preferences now submit real data.
+  - Tag/list sections use client state plus hidden JSON inputs.
+  - Work Experience supports up to 3 roles.
+  - Resume PDF upload saves to the stable storage key and persists URL/key.
+  - Save feedback uses `useActionState`.
+- Kept `components/layout/ProtectedHeader.tsx` and `actions/auth.ts` from the previous profile UI/logout work.
+- Updated `context/progress-tracker.md` and `context/ui-registry.md` for Feature 06 and follow-up UI fixes.
 
 ## Decisions made
 
-- Schema changes use InsForge CLI migrations instead of direct ad hoc SQL.
-- App-owned database objects live in the `public` schema.
-- Tables reference managed `auth.users(id)` but do not modify managed InsForge schemas.
-- RLS policies use direct owner checks with `(SELECT auth.uid())`, avoiding cross-table policy helpers and recursion risk.
-- Profile onboarding fields are nullable so users can create partial profiles before completion.
-- `source` is constrained to `search` or `url` because the architecture names both values, even though manual URL import is currently out of scope.
-- Status, level, preference, and similar fields use `CHECK` constraints instead of Postgres enum types so future changes are easier.
-- Resume storage is private. Future app code should store files at `resumes/{user_id}/resume.pdf` and persist both the returned URL and object key.
+- Profile completion percentage and missing fields are derived from saved profile data at render time. Only `is_complete` is persisted because the current schema does not include separate completion percentage or missing-field columns.
+- Profile rows are created lazily on first profile save when no `profiles` row exists yet.
+- Profile saves always scope writes to the authenticated user. Existing rows update by `id = user.id`; new rows insert with `id: user.id`.
+- `profile_completed` is captured only when the profile transitions from missing/incomplete to complete.
+- After successful saves, `ProfileForm` calls `router.refresh()` so server-derived completion UI reflects the persisted row immediately.
+- Simple scalar fields and selects are controlled client state so submitted form data matches the visible UI values.
+- Feature 06 uses the installed `@insforge/sdk@1.4.3` shape: database calls go through `insforge.database.from(...)`, and storage uploads call `insforge.storage.from("resumes").upload(path, file)` without an options object.
 
 ## Problems solved
 
-- Remote InsForge project had no existing migrations and no storage buckets. Feature 04 now establishes the first applied migration and the first bucket.
-- The schema now guards against future code accidentally linking a job or log to a run/job owned by another user.
-- The migration applied cleanly to the linked InsForge backend.
-- Verification confirmed:
-  - one applied migration,
-  - private `resumes` bucket,
-  - RLS enabled on all four app tables,
-  - owner policies present on the app tables.
-- `npm run lint` passes.
-- Attempting to write durable details to InsForge external project memory was rejected by the approval guard because it would upload implementation details outside the workspace without explicit authorization. Local project docs and this memory file are the durable handoff instead.
+- Fixed a Next.js runtime error from exporting a non-async value out of a `"use server"` file. The initial `useActionState` value now lives in the client form instead of `actions/profile.ts`.
+- Made missing-field chips in the profile attention banner clickable; they scroll to the relevant section and focus the matching field.
+- Fixed stale form/completion state after saving by returning `savedAt` from the Server Action and refreshing the router after successful saves.
+- Fixed Education changes not appearing to save by ensuring the server-rendered profile data refreshes after save.
+- Fixed Cover Letter Tone not saving by moving scalar/select fields to controlled client state.
+- Fixed Work Authorization select usability by giving selects select-specific styling/event syncing and making Work Authorization span the full Personal Info row.
+- Fixed complete-state profile ring overflow by using a smaller centered text treatment for `100%` while preserving the larger type for lower percentages.
+- Verification completed during this session:
+  - `npm run lint` passes.
+  - `npx tsc --noEmit` passes.
+  - `npm run build` passes when network access is allowed for the Next/Inter font fetch.
 
 ## Current state
 
@@ -53,28 +49,35 @@ Completed Feature 04 Database Schema from Phase 1.
   - 02 Auth
   - 03 PostHog Initialization
   - 04 Database Schema
-- Protected pages are still temporary placeholders.
-- No profile UI, profile save logic, resume upload, job discovery, or dashboard data UI has been built yet.
-- Auth and PostHog initialization remain in place from previous sessions.
-- Database and storage are ready for Phase 2 profile work.
-- Git status still includes broader existing homepage/auth/PostHog/context/assets work from prior sessions; do not assume every changed file came from Feature 04.
+- Phase 2 Profile Page:
+  - 05 Profile Page — Full UI is complete.
+  - 06 Profile Save Logic is complete.
+  - 07 AI Profile Extraction from Resume is next.
+  - 08 Resume PDF Generation from Profile is not started.
+- `/profile` now loads real profile data, lets the user edit/save all profile sections, uploads a resume PDF, refreshes completion UI, and persists `is_complete`.
+- Resume extraction and resume generation controls are still not implemented; generation remains disabled/visual-only.
+- Dashboard, Find Jobs, and Job Details are still protected placeholders from earlier phases, with shared protected navigation/logout.
+- Worktree is dirty with broader uncommitted feature work. Current `git status --short` includes modified `actions/auth.ts`, protected page files, `app/profile/page.tsx`, context docs, `memory.md`, and untracked `actions/profile.ts`, `components/layout/`, `components/profile/`, and `lib/profile.ts`. Do not assume every changed file came from the most recent small fix alone.
 
 ## Next session starts with
 
-Start Feature 05 Profile Page — Full UI from `context/build-plan.md`.
+Start Feature 07 AI Profile Extraction from Resume.
 
 Before implementation:
 
+- Run `/remember restore`.
 - Follow the `AGENTS.md` reading order.
-- Use `/architect` before building because the profile page is a complex UI feature.
-- Use `/imprint` after building UI components and update `context/ui-registry.md`.
-- Read the relevant Next.js docs in `node_modules/next/dist/docs/` before any Next.js-specific code changes.
-- Build the profile page UI with mock data only. Do not wire save logic yet.
-- Match existing protected page shell patterns and project UI tokens. Never use hardcoded hex values or raw Tailwind color classes.
+- Use `/architect` because Feature 07 touches uploaded files, AI extraction, form population, and profile data boundaries.
+- Use the OpenAI docs skill before writing OpenAI API code.
+- Read the relevant Next.js docs in `node_modules/next/dist/docs/` before adding route handlers or form/extraction flow changes.
+- Preserve the existing Feature 06 profile save flow and extend it instead of replacing the form.
+- Implement extraction so the user can upload/select a resume, click Extract from Resume, review populated fields, and save manually.
+- Keep resume parsing failures user-friendly and avoid surfacing raw errors.
+- Update `context/progress-tracker.md` and `context/ui-registry.md` after Feature 07.
 
 ## Open questions
 
+- Which PDF text extraction library should Feature 07 use in this Next.js 16 app, and does it need special bundling/runtime handling?
+- Should extraction run from the currently selected unsaved file in the browser, or only from a resume that has already been uploaded and saved by Feature 06?
+- Should extracted values overwrite all form fields or only fill currently empty fields?
 - Should `.env.example` be added soon to document required public environment variables without secrets?
-- Are Google and GitHub OAuth providers fully configured in InsForge and provider dashboards for the auth callback URL?
-- Should logout UI/actions be added during the first real authenticated shell/dashboard feature, or before then?
-- During Feature 06, should profile save logic create the `profiles` row lazily on first save, or should a profile row be inserted immediately after auth callback?
