@@ -16,6 +16,7 @@ import type {
   ProfileExtraction,
 } from "@/lib/profile-extraction";
 import { profileExtractionResponseSchema } from "@/lib/profile-extraction";
+import { resumeGenerationResponseSchema } from "@/lib/resume-generation";
 
 type ProfileFormProps = {
   profile: ProfileViewModel;
@@ -73,7 +74,7 @@ type ProfileScalarFields = {
   yearsExperience: string;
 };
 
-type ExtractionStatus = {
+type AsyncStatus = {
   message: string;
   success: boolean;
 };
@@ -491,16 +492,24 @@ function ResumeCard({
   extractionPending,
   extractionStatus,
   fileName,
+  generationPending,
+  generationStatus,
   hasResume,
   onExtract,
   onFileChange,
+  onGenerate,
+  resumeInputKey,
 }: {
   extractionPending: boolean;
-  extractionStatus: ExtractionStatus | null;
+  extractionStatus: AsyncStatus | null;
   fileName: string;
+  generationPending: boolean;
+  generationStatus: AsyncStatus | null;
   hasResume: boolean;
   onExtract: () => void;
   onFileChange: (file: File | null) => void;
+  onGenerate: () => void;
+  resumeInputKey: number;
 }): React.ReactNode {
   return (
     <Card>
@@ -531,6 +540,7 @@ function ResumeCard({
           Select Resume
         </label>
         <input
+          key={resumeInputKey}
           id="resume"
           name="resume"
           type="file"
@@ -541,6 +551,16 @@ function ResumeCard({
         <p className="mt-4 text-[12px] font-medium leading-4 text-text-muted">
           {fileName || (hasResume ? "Resume on file" : "No resume uploaded")}
         </p>
+        {hasResume ? (
+          <a
+            href="/api/resume/view"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 rounded-xl border border-border bg-surface px-6 py-2 text-[14px] font-bold leading-5 text-text-dark shadow-sm hover:bg-surface-secondary focus:outline-none focus:ring-1 focus:ring-accent"
+          >
+            View Resume
+          </a>
+        ) : null}
       </div>
 
       {extractionStatus ? (
@@ -573,17 +593,36 @@ function ResumeCard({
       ) : null}
 
       <div className="mt-8 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[16px] font-medium leading-6 text-text-secondary">
-          Need a fresh document based on the fields below?
-        </p>
+        <div>
+          <p className="text-[16px] font-medium leading-6 text-text-secondary">
+            Need a fresh document based on your saved profile?
+          </p>
+          <p className="mt-1 text-[12px] font-medium leading-4 text-text-muted">
+            Save any edits below before generating.
+          </p>
+        </div>
         <button
           type="button"
+          onClick={onGenerate}
           className="rounded-xl bg-accent px-8 py-3 text-[16px] font-bold leading-6 text-accent-foreground shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
-          disabled
+          disabled={generationPending}
         >
-          Generate Resume from Profile
+          {generationPending ? "Generating..." : "Generate Resume from Profile"}
         </button>
       </div>
+
+      {generationStatus ? (
+        <p
+          aria-live="polite"
+          className={`mt-6 rounded-lg border px-4 py-3 text-[14px] font-medium leading-5 ${
+            generationStatus.success
+              ? "border-success/20 bg-success-lightest text-success-foreground"
+              : "border-error/20 bg-error/5 text-error"
+          }`}
+        >
+          {generationStatus.message}
+        </p>
+      ) : null}
     </Card>
   );
 }
@@ -790,9 +829,13 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
     profile.workExperience,
   );
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeInputKey, setResumeInputKey] = useState(0);
   const [extractionPending, setExtractionPending] = useState(false);
   const [extractionStatus, setExtractionStatus] =
-    useState<ExtractionStatus | null>(null);
+    useState<AsyncStatus | null>(null);
+  const [generationPending, setGenerationPending] = useState(false);
+  const [generationStatus, setGenerationStatus] =
+    useState<AsyncStatus | null>(null);
 
   useEffect(() => {
     if (state.success && state.savedAt) {
@@ -926,6 +969,69 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
     }
   }
 
+  async function handleGenerate(): Promise<void> {
+    if (generationPending) {
+      return;
+    }
+
+    if (
+      profile.resumePdfUrl &&
+      !window.confirm(
+        "Generate a new resume and replace your current resume? Your existing resume will remain available if generation fails.",
+      )
+    ) {
+      return;
+    }
+
+    setGenerationPending(true);
+    setGenerationStatus(null);
+
+    try {
+      const response = await fetch("/api/resume/generate", {
+        method: "POST",
+      });
+      const result: unknown = await response.json();
+      const parsedResult = resumeGenerationResponseSchema.safeParse(result);
+
+      if (!parsedResult.success) {
+        setGenerationStatus({
+          message: "We could not generate your resume. Please try again.",
+          success: false,
+        });
+        return;
+      }
+
+      if (!response.ok || !parsedResult.data.success) {
+        setGenerationStatus({
+          message:
+            parsedResult.data.success === false
+              ? parsedResult.data.error
+              : "We could not generate your resume. Please try again.",
+          success: false,
+        });
+        return;
+      }
+
+      setResumeFile(null);
+      setResumeInputKey((currentKey) => currentKey + 1);
+      setExtractionStatus(null);
+      setGenerationStatus({
+        message:
+          "Your generated resume is now the active resume on your profile.",
+        success: true,
+      });
+      router.refresh();
+    } catch (error) {
+      console.error("[components/profile/ProfileForm] generate resume", error);
+      setGenerationStatus({
+        message: "We could not generate your resume. Please try again.",
+        success: false,
+      });
+    } finally {
+      setGenerationPending(false);
+    }
+  }
+
   return (
     <>
       <AttentionBanner
@@ -937,9 +1043,13 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
           extractionPending={extractionPending}
           extractionStatus={extractionStatus}
           fileName={resumeFile?.name ?? ""}
+          generationPending={generationPending}
+          generationStatus={generationStatus}
           hasResume={Boolean(profile.resumePdfUrl)}
           onExtract={() => void handleExtract()}
           onFileChange={handleFileChange}
+          onGenerate={() => void handleGenerate()}
+          resumeInputKey={resumeInputKey}
         />
 
         <Card>

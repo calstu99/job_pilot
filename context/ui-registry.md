@@ -217,3 +217,23 @@ Last updated: 2026-06-30
 
 **Pattern notes:**
 Resume extraction stays inside the existing Resume card and appears only after a local PDF is selected. Async feedback uses token-colored bordered messages with `aria-live="polite"`. The primary action retains the profile page’s rounded accent-button treatment and swaps its label to `Extracting...` while disabled.
+
+### Resume View Control
+
+File: components/profile/ProfileForm.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface`, `hover:bg-surface-secondary` |
+| Border           | `border-border` |
+| Border radius    | `rounded-xl` |
+| Text — primary   | `text-text-dark` |
+| Text — secondary | none |
+| Spacing          | `mt-4`, `px-6 py-2` |
+| Hover state      | `hover:bg-surface-secondary`, `focus:ring-1 focus:ring-accent` |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `focus:ring-accent` |
+
+**Pattern notes:**
+The active saved resume uses a quiet secondary action beneath the upload status. `View Resume` opens the authenticated inline PDF route in a new tab; the control is hidden when no persisted resume exists and does not preview a locally selected unsaved file.
