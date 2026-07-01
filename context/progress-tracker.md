@@ -6,9 +6,9 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ## Current Status
 
-**Phase:** Phase 3 — Find Jobs Page
-**Last completed:** 09 Find Jobs Page — Full UI
-**Next:** 10 Adzuna Job Discovery
+**Phase:** Phase 5 — Dashboard
+**Last completed:** 14 Dashboard Page — Full UI
+**Next:** 15 Stats Bar — Real Data
 
 ---
 
@@ -31,17 +31,17 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 3 — Find Jobs Page
 
 - [x] 09 Find Jobs Page — Full UI
-- [ ] 10 Adzuna Job Discovery
-- [ ] 11 Filter + Sort + Pagination
+- [x] 10 Adzuna Job Discovery
+- [x] 11 Filter + Sort + Pagination
 
 ### Phase 4 — Job Details Page
 
-- [ ] 12 Job Details Page — Full UI
-- [ ] 13 Company Research Agent
+- [x] 12 Job Details Page — Full UI
+- [x] 13 Company Research Agent
 
 ### Phase 5 — Dashboard
 
-- [ ] 14 Dashboard Page — Full UI
+- [x] 14 Dashboard Page — Full UI
 - [ ] 15 Stats Bar — Real Data
 - [ ] 16 Recent Activity — Real Data
 - [ ] 17 Analytics Charts — PostHog Data
@@ -49,6 +49,17 @@ Update this file after every completed feature. Any AI agent reading this should
 ---
 
 ## Decisions Made During Build
+
+- 2026-07-01 — Feature 14 replaces the protected dashboard placeholder with a responsive static dashboard matching `context/designs/dashboard.png`. The delivered mock is the visual source of truth where the older build plan differs, so the fourth stat is Jobs This Week and the weekday chart is Company Research Activity.
+- 2026-07-01 — Dashboard charts use accessible, token-colored SVG and CSS with mock data rather than a client charting dependency. The page remains a Server Component with real InsForge and PostHog data deferred to Features 15 through 17.
+- 2026-07-01 — Feature 13 runs synchronously from the job-details client: the research action shows an explicit one-to-two-minute loading state, waits for browsing, synthesis, and persistence, then refreshes the Server Component data.
+- 2026-07-01 — Company research uses Stagehand 3.6 with one Browserbase session capped at 120 seconds, visits the homepage plus at most three prioritized same-company pages, and always closes the session in a `finally` block.
+- 2026-07-01 — Browser extraction is best-effort. Empty or failed website research falls back to GPT-4o synthesis from the owner-scoped saved job and profile; synthesis and persistence failures preserve the previous dossier and return human-readable errors.
+- 2026-07-01 — The persisted `company_research` dossier contains all nine approved fields. Sources are replaced with the exact URLs actually visited rather than model-authored URLs, and `company_researched` fires only after the owner-scoped database update succeeds.
+- 2026-07-01 — The Company Research card now renders loading, error, empty, and complete states. Candidate-specific Your Edge and Gaps to Address content shares one accent-muted guidance panel; evidence-free tech, culture, or sources fields render deliberate muted fallbacks.
+- 2026-07-01 — Persisted job table rows now navigate to `/find-jobs/[id]` through native links spanning every visible cell. This repairs the missing Feature 12 entry path while preserving table layout, filtering, pagination, and keyboard focus behavior.
+- 2026-07-01 — Job details load through a server-only, owner-scoped InsForge query and normalize the selected job fields before rendering. Missing or inaccessible jobs return the route not-found state, while transient query failures show a human-readable retry card.
+- 2026-07-01 — Feature 12 follows `context/designs/job-details.png` in a centered `max-w-[936px]` layout with responsive summary cards, token-only match and gap badges, real external application links, and the company-research empty state. Research behavior remains deferred to Feature 13.
 
 - 2026-06-29 — Homepage implemented as a static Server Component using `next/image` public assets and `next/link` navigation/CTA links. No client component was needed.
 - 2026-06-29 — Root layout switched from Geist to Inter via `next/font/google` to match project UI rules.
@@ -89,11 +100,19 @@ Update this file after every completed feature. Any AI agent reading this should
 - 2026-06-30 — Find Jobs full UI implemented from `context/designs/find-jobs.png` as token-only mock Server Components. It includes the search card and success banner, filter controls, six-row score table, and pagination with no Adzuna, database, filtering, sorting, or pagination behavior yet.
 - 2026-06-30 — The delivered Find Jobs mock is the visual source of truth for Feature 09, so the table mirrors its five visible columns and does not add the build-plan-only Source column at this stage.
 - 2026-06-30 — Find Jobs mock data is isolated in `components/find-jobs/JobsTable.tsx`; the table uses horizontal overflow below its desktop minimum width while the search, filters, and pagination reflow responsively.
+- 2026-06-30 — Feature 10 adds authenticated `POST /api/agent/find`, complete-profile gating, Adzuna IT-job discovery, explicit US/UK/Canada/Australia country detection with US fallback, bounded-concurrency GPT-4o Structured Output scoring, owner-scoped run/job persistence, agent logs, and the approved PostHog search events.
+- 2026-06-30 — Adzuna results are deduplicated by source URL in application logic and by the applied partial unique index from `20260701030000_add-search-job-url-uniqueness.sql`; successful jobs survive per-job scoring or persistence failures.
+- 2026-06-30 — `/find-jobs` now shows the latest live search result set with loading, success, partial-success, empty, incomplete-profile, and error states. Results are not reloaded from the database after a page refresh until Feature 11.
+- 2026-06-30 — The Feature 10 filter bar operates locally on the latest search results: company/role text matching is case-insensitive, High/Low Match uses the shared `MATCH_THRESHOLD` of 70, and sorting supports Match Score, Newest, and Oldest. Feature 11 still owns persisted database loading and real pagination.
+- 2026-06-30 — Feature 11 replaces the latest-search-only list with owner-scoped persisted `jobs` loading through the InsForge SSR client. List reads select only table fields, request an exact filtered count, and use stable 20-row database ranges.
+- 2026-06-30 — Find Jobs filter text, High/Low match selection, sort order, and page are encoded in validated URL query parameters. Text changes are debounced, dropdowns update immediately, filter changes reset to page 1, and invalid or out-of-range page values fall back or clamp safely.
+- 2026-06-30 — Successful Adzuna discovery now refreshes the persisted jobs list and resets pagination while retaining active filters and sort order. Reloading `/find-jobs` restores saved results instead of returning to an empty client-only list.
 
 ---
 
 ## Notes
 
+- 2026-07-01 — Feature 13 expects server-only `BROWSERBASE_API_KEY`, `BROWSERBASE_PROJECT_ID`, and `OPENAI_API_KEY`. The installed browser packages are `@browserbasehq/stagehand@3.6.0` and `@browserbasehq/sdk@2.14.1`; Stagehand v3 manages the Browserbase session through `browserbaseSessionCreateParams`.
 - 2026-06-29 — Production build requires network access the first time Next fetches the Inter font for self-hosting.
 - 2026-06-29 — Auth runtime expects `NEXT_PUBLIC_INSFORGE_URL`, `NEXT_PUBLIC_INSFORGE_ANON_KEY`, and `NEXT_PUBLIC_APP_URL` in `.env.local`. Server Actions fall back to `http://localhost:3000` for `NEXT_PUBLIC_APP_URL` in local development.
 - 2026-06-29 — PostHog runtime expects `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`. The code temporarily accepts the existing local `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` name as a fallback while env files migrate to the documented key name.
@@ -101,3 +120,4 @@ Update this file after every completed feature. Any AI agent reading this should
 - 2026-06-30 — Feature 06 uses the installed `@insforge/sdk@1.4.3` shape: database calls go through `insforge.database.from(...)`, and storage uploads call `insforge.storage.from("resumes").upload(path, file)` without an options object.
 - 2026-06-30 — Feature 07 uses `openai@6.45.0`, `zod@4.4.3`, and `pdf-parse@2.4.5`. The current pdf-parse API is class-based: create `PDFParse` with PDF bytes, call `getText()`, and always call `destroy()`.
 - 2026-06-30 — Feature 08 uses `openai.responses.parse()` with `zodTextFormat()` and `@react-pdf/renderer@4.5.1`. Resume PDF text uses supported `maxLines` and `textOverflow: "ellipsis"` safeguards to preserve one-page output.
+- 2026-06-30 — Feature 10 expects server-only `ADZUNA_APP_ID`, `ADZUNA_APP_KEY`, and `OPENAI_API_KEY` values. Never expose these with a `NEXT_PUBLIC_` prefix.

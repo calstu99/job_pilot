@@ -1,3 +1,6 @@
+import { useState } from "react";
+import type { JobSort, MatchFilter } from "@/lib/job-list";
+
 function SearchIcon(): React.ReactNode {
   return (
     <svg
@@ -17,7 +20,25 @@ function SearchIcon(): React.ReactNode {
   );
 }
 
-export function JobFilters(): React.ReactNode {
+type JobFiltersProps = {
+  filterText: string;
+  matchFilter: MatchFilter;
+  onFilterTextChange: (value: string) => void;
+  onMatchFilterChange: (value: MatchFilter) => void;
+  onSortChange: (value: JobSort) => void;
+  sort: JobSort;
+};
+
+export function JobFilters({
+  filterText,
+  matchFilter,
+  onFilterTextChange,
+  onMatchFilterChange,
+  onSortChange,
+  sort,
+}: JobFiltersProps): React.ReactNode {
+  const [draftFilterText, setDraftFilterText] = useState(filterText);
+
   return (
     <section
       aria-label="Job list filters"
@@ -27,7 +48,12 @@ export function JobFilters(): React.ReactNode {
         <SearchIcon />
         <span className="sr-only">Filter jobs</span>
         <input
+          onChange={(event) => {
+            setDraftFilterText(event.target.value);
+            onFilterTextChange(event.target.value);
+          }}
           type="search"
+          value={draftFilterText}
           placeholder="Filter by company or role..."
           className="min-w-0 flex-1 bg-transparent text-[16px] font-normal leading-6 text-text-primary outline-none placeholder:text-text-muted"
         />
@@ -39,7 +65,10 @@ export function JobFilters(): React.ReactNode {
         <label>
           <span className="sr-only">Match filter</span>
           <select
-            defaultValue="all"
+            onChange={(event) =>
+              onMatchFilterChange(event.target.value as MatchFilter)
+            }
+            value={matchFilter}
             className="h-11 w-full cursor-pointer rounded-lg border border-border bg-surface px-4 pr-10 text-[14px] font-medium leading-5 text-text-primary shadow-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent sm:w-40"
           >
             <option value="all">All Matches</option>
@@ -50,7 +79,8 @@ export function JobFilters(): React.ReactNode {
         <label>
           <span className="sr-only">Sort jobs</span>
           <select
-            defaultValue="score"
+            onChange={(event) => onSortChange(event.target.value as JobSort)}
+            value={sort}
             className="h-11 w-full cursor-pointer rounded-lg border border-border bg-surface px-4 pr-10 text-[14px] font-medium leading-5 text-text-dark shadow-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent sm:w-40"
           >
             <option value="score">Match Score</option>

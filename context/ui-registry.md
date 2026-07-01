@@ -141,7 +141,7 @@ This is a non-visual backend feature. It creates the owner-scoped InsForge table
 ### Profile Page Full UI
 
 File: app/profile/page.tsx
-Last updated: 2026-06-30
+Last updated: 2026-07-01
 
 | Property         | Class           |
 | ---------------- | --------------- |
@@ -191,7 +191,7 @@ Last updated: 2026-06-30
 | Text — primary   | `text-text-primary`, `text-text-dark` |
 | Text — secondary | none |
 | Spacing          | `px-6 py-4`, `gap-4`, `gap-6`, `sm:gap-8` |
-| Hover state      | `hover:bg-surface-secondary` |
+| Hover state      | `hover:bg-surface-secondary`; linked cells use `focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent` |
 | Shadow           | `shadow-sm` on sign out button |
 | Accent usage     | `text-accent` for active protected nav item |
 
@@ -265,18 +265,18 @@ Last updated: 2026-06-30
 
 | Property         | Class           |
 | ---------------- | --------------- |
-| Background       | `bg-surface` for card and controls, `bg-success-lightest` for success feedback |
-| Border           | `border-border`, `border-success-light` |
+| Background       | `bg-surface` for card and controls, `bg-success-lightest` for success feedback, `bg-accent-muted` for errors |
+| Border           | `border-border`, `border-success-light`, `border-warning` |
 | Border radius    | `rounded-xl` for card, `rounded-lg` for controls and feedback |
 | Text — primary   | `text-text-primary`, `text-text-dark`, `text-accent-foreground` |
 | Text — secondary | `text-text-muted`, `text-success-dark` |
 | Spacing          | `p-6`, `gap-5`, `px-4`, `px-7`, `mt-5` |
-| Hover state      | none for Feature 09 mock controls |
+| Hover state      | async action uses `disabled:cursor-not-allowed disabled:opacity-70` |
 | Shadow           | `shadow-sm` |
 | Accent usage     | `bg-accent`, `focus-within:ring-accent`, `focus:ring-accent` |
 
 **Pattern notes:**
-Find Jobs search uses uppercase 12px field labels, 48px controls, and a full-width tokenized success banner beneath the desktop control row. The controls stack on smaller screens and remain visual-only until Feature 10.
+Find Jobs search uses uppercase 12px field labels, 48px controlled inputs, and a full-width tokenized status banner beneath the desktop control row. The controls stack on smaller screens. During discovery, inputs and the primary action are disabled and the search icon becomes a token-colored spinner; incomplete-profile errors include an inline link to `/profile`.
 
 ### Job Filter Bar
 
@@ -291,17 +291,17 @@ Last updated: 2026-06-30
 | Text — primary   | `text-text-primary`, `text-text-dark` |
 | Text — secondary | `text-text-muted` |
 | Spacing          | `p-4`, `gap-3`, `gap-4`, `px-4` |
-| Hover state      | none for Feature 09 mock controls |
+| Hover state      | controls use `focus:border-accent focus:ring-1 focus:ring-accent` |
 | Shadow           | `shadow-sm` |
 | Accent usage     | `focus:ring-accent`, `focus:border-accent` |
 
 **Pattern notes:**
-Job list filtering uses one quiet search field followed by bordered select controls. A token-colored divider separates search from desktop filters, while mobile uses a stacked layout without the divider.
+Job list filtering uses one controlled, case-insensitive company/role search followed by bordered Match and Sort selects. High Match means scores at or above the shared `MATCH_THRESHOLD`; Low Match means scores below it. Sort options are Match Score, Newest, and Oldest. A token-colored divider separates search from desktop filters, while mobile uses a stacked layout without the divider. Feature 11 keeps these controls URL-backed: text input updates are debounced, dropdowns update immediately, and every filter change resets the database-backed list to page 1.
 
 ### Jobs Results Table
 
 File: components/find-jobs/JobsTable.tsx, components/find-jobs/JobsPagination.tsx
-Last updated: 2026-06-30
+Last updated: 2026-07-01
 
 | Property         | Class           |
 | ---------------- | --------------- |
@@ -311,9 +311,49 @@ Last updated: 2026-06-30
 | Text — primary   | `text-text-primary`, `text-text-dark` |
 | Text — secondary | `text-text-secondary`, `text-text-muted` |
 | Spacing          | `px-8 py-5` table cells, `px-6 py-5` pagination, `gap-2`, `gap-3`, `gap-4` |
-| Hover state      | `hover:bg-surface-secondary` |
+| Hover state      | `hover:bg-surface-secondary`; linked cells use `focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent` |
 | Shadow           | `shadow-sm` on outer card and pagination buttons |
 | Accent usage     | `bg-accent-muted text-accent` for active page; score fills use `bg-success`, `bg-info-medium`, and `bg-warning` |
 
 **Pattern notes:**
-Jobs tables use uppercase 12px headers, white rows separated by token borders, 16px primary row content, and inline 6px match bars. The desktop table scrolls horizontally on narrow screens instead of collapsing columns; pagination wraps naturally below it.
+Jobs tables use uppercase 12px headers, white rows separated by token borders, 16px primary row content, and inline 6px match bars. Every populated cell links to the owner-scoped `/find-jobs/[id]` details route, preserving the full-row click target while retaining native link and keyboard behavior. The desktop table scrolls horizontally on narrow screens instead of collapsing columns; pagination wraps naturally below it. Pagination shows the exact database result range, Previous/Next controls, up to five direct page buttons, and ellipses around compact page windows. Active pages retain the accent-muted treatment; inactive pages reuse secondary bordered controls. Empty results reuse the centered icon, heading, and guidance pattern, with copy changing for active filters and database-load failures.
+
+### Job Details Page
+
+File: app/find-jobs/[id]/page.tsx, components/job-details/
+Last updated: 2026-07-01
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-background` for page, `bg-surface` for cards, `bg-surface-secondary` for neutral icon tiles, `bg-accent-muted` for candidate guidance |
+| Border           | `border-border`, `border-accent-light`, `border-error/20` |
+| Border radius    | `rounded-xl` for cards, grouped research guidance, and icon tiles; `rounded-md` for actions; `rounded-full` for score, skill, and technology badges |
+| Text — primary   | `text-text-primary` |
+| Text — secondary | `text-text-secondary`, `text-text-muted` |
+| Spacing          | `px-6 py-8` page shell, `p-6` and `sm:p-7` cards, `space-y-6` page sections, `space-y-8` research sections, `gap-2` badges |
+| Hover state      | `hover:bg-surface-secondary`, `hover:bg-accent-dark`, `hover:text-text-primary`; research and full-description actions use `focus-visible:ring-2 focus-visible:ring-accent` |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `bg-accent text-accent-foreground`, `bg-success-lightest text-success-foreground`, `bg-accent-muted text-accent` |
+
+**Pattern notes:**
+Job details use the delivered `context/designs/job-details.png` as the visual source of truth, with a centered `max-w-[936px]` protected-page column. Summary information reflows from four columns to two and then one, while content cards remain full width. Matched skills use success pills, gap skills use accent-muted pills, and external application actions use the primary accent treatment. Because Adzuna stores only a description snippet, the Job Description card places a quiet bordered `View full job description` action below a token divider and opens the original listing in a new tab. Company research preserves the same card shell and live-region error pattern. Its completed state uses 14px section headings and body copy, accent-muted technology pills, token-colored bullet markers, and one bordered accent-muted two-column panel for the candidate-specific Your Edge and Gaps to Address content. Empty evidence fields render deliberate muted copy rather than disappearing.
+
+### Dashboard Overview
+
+File: app/dashboard/page.tsx, components/dashboard/DashboardOverview.tsx
+Last updated: 2026-07-01
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-background` for page, `bg-surface` for cards |
+| Border           | `border-border`, chart guides use `border-dashed border-border` |
+| Border radius    | `rounded-xl` for cards, `rounded-md` for trends and chart bars, `rounded-full` for activity dots |
+| Text — primary   | `text-text-primary` |
+| Text — secondary | `text-text-secondary`, `text-text-muted` |
+| Spacing          | `px-6 py-8` page shell, `px-6 py-7` stat cards, `px-6 py-5` card headings, `gap-5` and `gap-6` grids |
+| Hover state      | none |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `bg-accent`, `stroke-accent`, `bg-info`, `bg-success`, `bg-success-lightest text-success-foreground` |
+
+**Pattern notes:**
+The dashboard follows `context/designs/dashboard.png` as the visual source of truth, including its Jobs This Week stat and Company Research Activity chart where the older build-plan copy differs. Stat cards share one fixed hierarchy: 14px muted label, 36px semibold value, then a 13px helper row. Analytics cards use a bordered heading band and token-colored, accessible SVG/CSS charts. The four-card stats grid, paired middle row, and two-to-one lower chart row collapse to stacked cards below their respective breakpoints. Feature 14 uses static mock data and remains a Server Component; database and PostHog data wiring belongs to Features 15–17.

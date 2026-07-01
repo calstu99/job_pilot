@@ -1,70 +1,39 @@
+import Link from "next/link";
+import type { JobSearchResult } from "@/lib/job-discovery";
+
 type MatchTone = "high" | "medium" | "low";
-
-type MockJob = {
-  company: string;
-  dateFound: string;
-  role: string;
-  salary: string;
-  score: number;
-  tone: MatchTone;
-};
-
-const mockJobs: MockJob[] = [
-  {
-    company: "Vercel",
-    dateFound: "2 hours ago",
-    role: "Senior Frontend Engineer",
-    salary: "$160k - $200k",
-    score: 94,
-    tone: "high",
-  },
-  {
-    company: "Stripe",
-    dateFound: "Yesterday",
-    role: "Staff UI Engineer",
-    salary: "$180k - $240k",
-    score: 88,
-    tone: "medium",
-  },
-  {
-    company: "Linear",
-    dateFound: "Yesterday",
-    role: "Product Engineer",
-    salary: "$150k - $190k",
-    score: 96,
-    tone: "high",
-  },
-  {
-    company: "Notion",
-    dateFound: "2 days ago",
-    role: "Frontend Developer",
-    salary: "$130k - $170k",
-    score: 72,
-    tone: "low",
-  },
-  {
-    company: "OpenAI",
-    dateFound: "3 days ago",
-    role: "Design Engineer",
-    salary: "$200k - $280k",
-    score: 91,
-    tone: "high",
-  },
-  {
-    company: "Figma",
-    dateFound: "4 days ago",
-    role: "Software Engineer, Editor",
-    salary: "$170k - $220k",
-    score: 85,
-    tone: "medium",
-  },
-];
 
 const matchToneClasses: Record<MatchTone, string> = {
   high: "bg-success",
   low: "bg-warning",
   medium: "bg-info-medium",
 };
+
+function getMatchTone(score: number): MatchTone {
+  if (score >= 90) {
+    return "high";
+  }
+
+  if (score >= 80) {
+    return "medium";
+  }
+
+  return "low";
+}
+
+function formatDateFound(value: string): string {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Just now";
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
 
 function CompanyIcon(): React.ReactNode {
   return (
@@ -112,7 +81,31 @@ function MatchScore({
   );
 }
 
-export function JobsTable(): React.ReactNode {
+export function JobsTable({
+  emptyMessage = "Enter a role and optional location above to discover and score new opportunities.",
+  emptyTitle = "Your job matches will appear here",
+  jobs,
+}: {
+  emptyMessage?: string;
+  emptyTitle?: string;
+  jobs: JobSearchResult[];
+}): React.ReactNode {
+  if (jobs.length === 0) {
+    return (
+      <div className="px-6 py-16 text-center">
+        <span className="mx-auto block w-fit text-text-muted">
+          <CompanyIcon />
+        </span>
+        <h2 className="mt-4 text-[18px] font-semibold leading-7 text-text-primary">
+          {emptyTitle}
+        </h2>
+        <p className="mx-auto mt-1 max-w-md text-[14px] font-normal leading-5 text-text-secondary">
+          {emptyMessage}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1120px] border-collapse text-left">
@@ -132,30 +125,58 @@ export function JobsTable(): React.ReactNode {
           </tr>
         </thead>
         <tbody>
-          {mockJobs.map((job) => (
+          {jobs.map((job) => (
             <tr
-              key={`${job.company}-${job.role}`}
+              key={job.id}
               className="border-b border-border bg-surface transition-colors last:border-b-0 hover:bg-surface-secondary"
             >
-              <td className="px-8 py-5">
-                <div className="flex items-center gap-4">
+              <td>
+                <Link
+                  href={`/find-jobs/${job.id}`}
+                  aria-label={`View ${job.role} at ${job.company}`}
+                  className="flex items-center gap-4 px-8 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                >
                   <CompanyIcon />
                   <span className="text-[16px] font-semibold leading-6 text-text-primary">
                     {job.company}
                   </span>
-                </div>
+                </Link>
               </td>
-              <td className="px-8 py-5 text-[16px] font-medium leading-6 text-text-dark">
-                {job.role}
+              <td>
+                <Link
+                  href={`/find-jobs/${job.id}`}
+                  aria-label={`View ${job.role} at ${job.company}`}
+                  className="block px-8 py-5 text-[16px] font-medium leading-6 text-text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                >
+                  {job.role}
+                </Link>
               </td>
-              <td className="px-8 py-5">
-                <MatchScore score={job.score} tone={job.tone} />
+              <td>
+                <Link
+                  href={`/find-jobs/${job.id}`}
+                  aria-label={`View ${job.role} at ${job.company}`}
+                  className="block px-8 py-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                >
+                  <MatchScore score={job.score} tone={getMatchTone(job.score)} />
+                </Link>
               </td>
-              <td className="whitespace-nowrap px-8 py-5 text-[16px] font-normal leading-6 text-text-dark">
-                {job.salary}
+              <td>
+                <Link
+                  href={`/find-jobs/${job.id}`}
+                  aria-label={`View ${job.role} at ${job.company}`}
+                  className="block whitespace-nowrap px-8 py-5 text-[16px] font-normal leading-6 text-text-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                >
+                  {job.salary ?? "Not listed"}
+                </Link>
               </td>
-              <td className="whitespace-nowrap px-8 py-5 text-[16px] font-normal leading-6 text-text-secondary">
-                {job.dateFound}
+              <td>
+                <Link
+                  href={`/find-jobs/${job.id}`}
+                  aria-label={`View ${job.role} at ${job.company}`}
+                  className="block whitespace-nowrap px-8 py-5 text-[16px] font-normal leading-6 text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent"
+                >
+                  {formatDateFound(job.dateFound)}
+                </Link>
               </td>
             </tr>
           ))}

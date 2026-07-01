@@ -1,27 +1,18 @@
+import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { ProtectedHeader } from "@/components/layout/ProtectedHeader";
 import { requireUser } from "@/lib/insforge-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage(): Promise<React.ReactNode> {
-  const user = await requireUser();
+  await requireUser();
 
   return (
     <main className="min-h-screen bg-background">
       <ProtectedHeader activePage="dashboard" />
-      <div className="px-6 py-8 sm:px-10 lg:px-20">
-        <section className="mx-auto max-w-[1440px] rounded-xl border border-border bg-surface p-6 shadow-sm">
-          <p className="text-[12px] font-medium uppercase leading-4 text-accent">
-            Dashboard
-          </p>
-          <h1 className="mt-3 text-[30px] font-semibold leading-9 text-text-primary">
-            Welcome back
-          </h1>
-          <p className="mt-3 text-[14px] font-medium leading-5 text-text-secondary">
-            You are signed in as {user.email}. The full dashboard UI is
-            scheduled for Phase 5.
-          </p>
-        </section>
+      <div className="mx-auto max-w-[1440px] px-6 py-8 sm:px-10 lg:px-20">
+        <h1 className="sr-only">Dashboard</h1>
+        <DashboardOverview />
       </div>
     </main>
   );
