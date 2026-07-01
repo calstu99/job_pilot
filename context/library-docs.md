@@ -659,17 +659,22 @@ Only use these — others are silently ignored:
 ### Extract Text from Uploaded Resume
 
 ```typescript
-import pdf from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 
 // In API route handling resume upload
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("resume") as File;
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const bytes = new Uint8Array(arrayBuffer);
+  const parser = new PDFParse({ data: bytes });
 
-  const pdfData = await pdf(buffer);
-  const extractedText = pdfData.text; // raw text content
+  try {
+    const pdfData = await parser.getText();
+    const extractedText = pdfData.text; // raw text content
+  } finally {
+    await parser.destroy();
+  }
 
   // Send to GPT-4o for structured extraction
 }
@@ -678,6 +683,8 @@ export async function POST(req: NextRequest) {
 **Rules:**
 
 - Server-side only — never import in client components
+- This project uses pdf-parse v2 — use the `PDFParse` class, not the removed v1 default function
+- Always call `parser.destroy()` in a finally block
 - `pdfData.text` is raw unformatted text — GPT-4o handles the structure extraction
 - Always handle parse errors — some PDFs are image-based and return empty text
 - If `pdfData.text` is empty or very short — return error to user: "Could not extract text from this PDF. Please try a different file."

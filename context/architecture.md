@@ -199,7 +199,7 @@ URL saved to profiles table
 | ------------------- | ----------- | -------------------------------------------- |
 | id                  | uuid        | References auth.users                        |
 | full_name           | text        |                                              |
-| email               | text        | Pre-filled from auth                         |
+| email               | text        | Editable contact email, initially from auth  |
 | phone               | text        |                                              |
 | location            | text        | City, country                                |
 | current_title       | text        | Most recent job title                        |

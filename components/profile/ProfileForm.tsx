@@ -12,6 +12,10 @@ import {
   type WorkExperienceRole,
   workAuthorizationOptions,
 } from "@/lib/profile";
+import type {
+  ProfileExtraction,
+} from "@/lib/profile-extraction";
+import { profileExtractionResponseSchema } from "@/lib/profile-extraction";
 
 type ProfileFormProps = {
   profile: ProfileViewModel;
@@ -23,7 +27,6 @@ type FieldProps = {
   name: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  readOnly?: boolean;
   type?: string;
   value: string;
 };
@@ -68,6 +71,11 @@ type ProfileScalarFields = {
   salaryExpectation: string;
   workAuthorization: string;
   yearsExperience: string;
+};
+
+type ExtractionStatus = {
+  message: string;
+  success: boolean;
 };
 
 const inputClassName =
@@ -177,13 +185,23 @@ function createProfileScalarFields(
   };
 }
 
+function hasWorkExperienceContent(roles: WorkExperienceRole[]): boolean {
+  return roles.some(
+    (role) =>
+      role.companyName.trim() ||
+      role.jobTitle.trim() ||
+      role.startDate.trim() ||
+      role.endDate.trim() ||
+      role.responsibilities.trim(),
+  );
+}
+
 function TextField({
   className = "",
   label,
   name,
   onChange,
   placeholder,
-  readOnly = false,
   type = "text",
   value,
 }: FieldProps): React.ReactNode {
@@ -202,7 +220,6 @@ function TextField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        readOnly={readOnly}
         className={inputClassName}
       />
     </div>
@@ -471,13 +488,19 @@ function AttentionBanner({
 }
 
 function ResumeCard({
+  extractionPending,
+  extractionStatus,
   fileName,
   hasResume,
-  onFileNameChange,
+  onExtract,
+  onFileChange,
 }: {
+  extractionPending: boolean;
+  extractionStatus: ExtractionStatus | null;
   fileName: string;
   hasResume: boolean;
-  onFileNameChange: (fileName: string) => void;
+  onExtract: () => void;
+  onFileChange: (file: File | null) => void;
 }): React.ReactNode {
   return (
     <Card>
@@ -485,8 +508,8 @@ function ResumeCard({
         Resume
       </h2>
       <p className="mt-2 text-[16px] font-medium leading-6 text-text-secondary">
-        Upload an existing resume to auto-fill the profile later, or keep one on
-        file for resume generation.
+        Upload an existing resume, extract its details, then review everything
+        before saving.
       </p>
 
       <div className="mt-8 flex min-h-[252px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface-secondary px-6 text-center">
@@ -512,15 +535,42 @@ function ResumeCard({
           name="resume"
           type="file"
           accept="application/pdf,.pdf"
-          onChange={(event) =>
-            onFileNameChange(event.target.files?.[0]?.name ?? "")
-          }
+          onChange={(event) => onFileChange(event.target.files?.[0] ?? null)}
           className="sr-only"
         />
         <p className="mt-4 text-[12px] font-medium leading-4 text-text-muted">
           {fileName || (hasResume ? "Resume on file" : "No resume uploaded")}
         </p>
       </div>
+
+      {extractionStatus ? (
+        <p
+          aria-live="polite"
+          className={`mt-6 rounded-lg border px-4 py-3 text-[14px] font-medium leading-5 ${
+            extractionStatus.success
+              ? "border-success/20 bg-success-lightest text-success-foreground"
+              : "border-error/20 bg-error/5 text-error"
+          }`}
+        >
+          {extractionStatus.message}
+        </p>
+      ) : null}
+
+      {fileName ? (
+        <div className="mt-6 flex flex-col gap-3 rounded-xl border border-border bg-surface-secondary p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[14px] font-medium leading-5 text-text-secondary">
+            Fill empty profile fields from this PDF.
+          </p>
+          <button
+            type="button"
+            onClick={onExtract}
+            disabled={extractionPending}
+            className="rounded-xl bg-accent px-6 py-3 text-[14px] font-bold leading-5 text-accent-foreground shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {extractionPending ? "Extracting..." : "Extract from Resume"}
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-8 flex flex-col gap-4 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[16px] font-medium leading-6 text-text-secondary">
@@ -739,7 +789,10 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
   const [workExperience, setWorkExperience] = useState<WorkExperienceRole[]>(
     profile.workExperience,
   );
-  const [fileName, setFileName] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [extractionPending, setExtractionPending] = useState(false);
+  const [extractionStatus, setExtractionStatus] =
+    useState<ExtractionStatus | null>(null);
 
   useEffect(() => {
     if (state.success && state.savedAt) {
@@ -770,6 +823,109 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
     }));
   }
 
+  function fillEmptyFields(extraction: ProfileExtraction): void {
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      currentTitle: currentValues.currentTitle || extraction.currentTitle,
+      education: {
+        fieldOfStudy:
+          currentValues.education.fieldOfStudy ||
+          extraction.education.fieldOfStudy,
+        graduationYear:
+          currentValues.education.graduationYear ||
+          extraction.education.graduationYear,
+        highestDegree:
+          currentValues.education.highestDegree ||
+          extraction.education.highestDegree,
+        institutionName:
+          currentValues.education.institutionName ||
+          extraction.education.institutionName,
+      },
+      experienceLevel:
+        currentValues.experienceLevel || extraction.experienceLevel,
+      fullName: currentValues.fullName || extraction.fullName,
+      linkedinUrl: currentValues.linkedinUrl || extraction.linkedinUrl,
+      location: currentValues.location || extraction.location,
+      phone: currentValues.phone || extraction.phone,
+      portfolioUrl: currentValues.portfolioUrl || extraction.portfolioUrl,
+      yearsExperience:
+        currentValues.yearsExperience || extraction.yearsExperience,
+    }));
+    setSkills((currentItems) =>
+      currentItems.length > 0 ? currentItems : extraction.skills,
+    );
+    setIndustries((currentItems) =>
+      currentItems.length > 0 ? currentItems : extraction.industries,
+    );
+    setJobTitles((currentItems) =>
+      currentItems.length > 0 ? currentItems : extraction.jobTitlesSeeking,
+    );
+    setWorkExperience((currentRoles) =>
+      hasWorkExperienceContent(currentRoles)
+        ? currentRoles
+        : extraction.workExperience,
+    );
+  }
+
+  function handleFileChange(file: File | null): void {
+    setResumeFile(file);
+    setExtractionStatus(null);
+  }
+
+  async function handleExtract(): Promise<void> {
+    if (!resumeFile || extractionPending) {
+      return;
+    }
+
+    setExtractionPending(true);
+    setExtractionStatus(null);
+
+    try {
+      const extractionFormData = new FormData();
+      extractionFormData.set("resume", resumeFile);
+      const response = await fetch("/api/resume/extract", {
+        body: extractionFormData,
+        method: "POST",
+      });
+      const result: unknown = await response.json();
+      const parsedResult = profileExtractionResponseSchema.safeParse(result);
+
+      if (!parsedResult.success) {
+        setExtractionStatus({
+          message: "We could not process this resume. Please try again.",
+          success: false,
+        });
+        return;
+      }
+
+      if (!response.ok || !parsedResult.data.success) {
+        setExtractionStatus({
+          message:
+            parsedResult.data.success === false
+              ? parsedResult.data.error
+              : "We could not process this resume. Please try again.",
+          success: false,
+        });
+        return;
+      }
+
+      fillEmptyFields(parsedResult.data.data);
+      setExtractionStatus({
+        message:
+          "Resume details added to empty fields. Review them before saving.",
+        success: true,
+      });
+    } catch (error) {
+      console.error("[components/profile/ProfileForm] extract resume", error);
+      setExtractionStatus({
+        message: "We could not process this resume. Please try again.",
+        success: false,
+      });
+    } finally {
+      setExtractionPending(false);
+    }
+  }
+
   return (
     <>
       <AttentionBanner
@@ -778,9 +934,12 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
       />
       <form action={formAction} className="space-y-8">
         <ResumeCard
-          fileName={fileName}
+          extractionPending={extractionPending}
+          extractionStatus={extractionStatus}
+          fileName={resumeFile?.name ?? ""}
           hasResume={Boolean(profile.resumePdfUrl)}
-          onFileNameChange={setFileName}
+          onExtract={() => void handleExtract()}
+          onFileChange={handleFileChange}
         />
 
         <Card>
@@ -818,7 +977,6 @@ export function ProfileForm({ profile }: ProfileFormProps): React.ReactNode {
                   value={formValues.email}
                   onChange={(value) => updateFormValue("email", value)}
                   type="email"
-                  readOnly
                 />
                 <TextField
                   name="phone"

@@ -1,83 +1,74 @@
-# Memory — Feature 06 Profile Save Logic
+# Memory — Feature 07 AI Profile Extraction from Resume
 
-Last updated: 2026-06-29 20:59 PDT
+Last updated: 2026-06-30 17:27 PDT
 
 ## What was built
 
-Completed Feature 06 Profile Save Logic from Phase 2.
+Completed Feature 07 AI Profile Extraction from Resume.
 
-- Added `actions/profile.ts` for the profile save Server Action.
-- Added `lib/profile.ts` for profile view-model normalization, option values, completion calculation, and shared profile types.
-- Reworked `/profile` in `app/profile/page.tsx` to load the authenticated user's `profiles` row, normalize it, and pass it into the client form.
-- Added `components/profile/ProfileForm.tsx` as the editable profile form:
-  - Personal Info, Professional Info, Work Experience, Education, and Job Preferences now submit real data.
-  - Tag/list sections use client state plus hidden JSON inputs.
-  - Work Experience supports up to 3 roles.
-  - Resume PDF upload saves to the stable storage key and persists URL/key.
-  - Save feedback uses `useActionState`.
-- Kept `components/layout/ProtectedHeader.tsx` and `actions/auth.ts` from the previous profile UI/logout work.
-- Updated `context/progress-tracker.md` and `context/ui-registry.md` for Feature 06 and follow-up UI fixes.
+- Added `app/api/resume/extract/route.ts` as an authenticated PDF extraction endpoint with file type, signature, size, and text-content validation.
+- Added `agent/profile-extractor.ts` for GPT-4o structured resume extraction through the OpenAI Responses API.
+- Added `lib/profile-extraction.ts` for shared Zod schemas, extraction types, and API response validation.
+- Extended `components/profile/ProfileForm.tsx` with:
+  - Extract from Resume controls after a local PDF is selected.
+  - Loading, success, and friendly failure states.
+  - Client-side population of empty profile fields for manual review before saving.
+- Added `openai`, `zod`, and `pdf-parse` dependencies and configured `pdf-parse` as a server-external package in `next.config.ts`.
+- Updated `actions/profile.ts` so the profile contact email is editable, validated, and persisted independently from the authenticated login email.
+- Updated `context/architecture.md`, `context/build-plan.md`, `context/library-docs.md`, `context/progress-tracker.md`, and `context/ui-registry.md`.
 
 ## Decisions made
 
-- Profile completion percentage and missing fields are derived from saved profile data at render time. Only `is_complete` is persisted because the current schema does not include separate completion percentage or missing-field columns.
-- Profile rows are created lazily on first profile save when no `profiles` row exists yet.
-- Profile saves always scope writes to the authenticated user. Existing rows update by `id = user.id`; new rows insert with `id: user.id`.
-- `profile_completed` is captured only when the profile transitions from missing/incomplete to complete.
-- After successful saves, `ProfileForm` calls `router.refresh()` so server-derived completion UI reflects the persisted row immediately.
-- Simple scalar fields and selects are controlled client state so submitted form data matches the visible UI values.
-- Feature 06 uses the installed `@insforge/sdk@1.4.3` shape: database calls go through `insforge.database.from(...)`, and storage uploads call `insforge.storage.from("resumes").upload(path, file)` without an options object.
+- Extraction runs from the currently selected unsaved PDF; the file does not need to be uploaded first.
+- Extracted data fills only empty fields. Existing saved values and manual edits are preserved.
+- Extraction is evidence-based and supports contact details except email, links, professional information, skills, industries, up to three work roles, education, and likely job titles.
+- GPT-4o does not infer work authorization, remote preference, salary expectations, preferred locations, or cover-letter tone.
+- Extracted values remain client-side until the user explicitly clicks Save Profile.
+- Profile contact email may differ from the login email. Authentication identity remains unchanged.
+- Email is excluded from AI resume extraction so an authenticated user's contact address is not silently replaced.
 
 ## Problems solved
 
-- Fixed a Next.js runtime error from exporting a non-async value out of a `"use server"` file. The initial `useActionState` value now lives in the client form instead of `actions/profile.ts`.
-- Made missing-field chips in the profile attention banner clickable; they scroll to the relevant section and focus the matching field.
-- Fixed stale form/completion state after saving by returning `savedAt` from the Server Action and refreshing the router after successful saves.
-- Fixed Education changes not appearing to save by ensuring the server-rendered profile data refreshes after save.
-- Fixed Cover Letter Tone not saving by moving scalar/select fields to controlled client state.
-- Fixed Work Authorization select usability by giving selects select-specific styling/event syncing and making Work Authorization span the full Personal Info row.
-- Fixed complete-state profile ring overflow by using a smaller centered text treatment for `100%` while preserving the larger type for lower percentages.
-- Verification completed during this session:
+- Resolved the project documentation's outdated `pdf-parse` v1 example. Installed `pdf-parse@2.4.5` uses the class-based `PDFParse({ data })`, `getText()`, and `destroy()` lifecycle.
+- Added `serverExternalPackages: ["pdf-parse"]` for the current Next.js 16 server build.
+- Runtime-validates extraction API responses in the client instead of trusting a TypeScript assertion.
+- Handles invalid, oversized, image-only, and failed PDF extraction paths with human-readable messages and no raw error exposure.
+- Changed the Personal Info email field from read-only auth data to an editable contact address and added server-side validation.
+- Verification completed:
   - `npm run lint` passes.
   - `npx tsc --noEmit` passes.
-  - `npm run build` passes when network access is allowed for the Next/Inter font fetch.
+  - `npm run build` passes when network access is allowed for the Inter font fetch.
+  - `git diff --check` passes.
 
 ## Current state
 
-- Phase 1 Foundation is complete:
-  - 01 Homepage
-  - 02 Auth
-  - 03 PostHog Initialization
-  - 04 Database Schema
+- Phase 1 Foundation is complete.
 - Phase 2 Profile Page:
   - 05 Profile Page — Full UI is complete.
   - 06 Profile Save Logic is complete.
-  - 07 AI Profile Extraction from Resume is next.
-  - 08 Resume PDF Generation from Profile is not started.
-- `/profile` now loads real profile data, lets the user edit/save all profile sections, uploads a resume PDF, refreshes completion UI, and persists `is_complete`.
-- Resume extraction and resume generation controls are still not implemented; generation remains disabled/visual-only.
-- Dashboard, Find Jobs, and Job Details are still protected placeholders from earlier phases, with shared protected navigation/logout.
-- Worktree is dirty with broader uncommitted feature work. Current `git status --short` includes modified `actions/auth.ts`, protected page files, `app/profile/page.tsx`, context docs, `memory.md`, and untracked `actions/profile.ts`, `components/layout/`, `components/profile/`, and `lib/profile.ts`. Do not assume every changed file came from the most recent small fix alone.
+  - 07 AI Profile Extraction from Resume is complete.
+  - 08 Resume PDF Generation from Profile is next.
+- `/profile` supports real profile loading/saving, resume upload, GPT-4o extraction into empty fields, completion calculation, and an editable contact email.
+- Resume generation remains disabled and visual-only.
+- Dashboard, Find Jobs, and Job Details remain protected placeholders.
+- The worktree is dirty with uncommitted Feature 07 changes. Do not assume every modified profile or context file belongs only to the final email follow-up.
+- A credential was exposed in conversation during this session. It was not copied here or used by the implementation; it must be revoked/rotated if that has not already happened.
 
 ## Next session starts with
 
-Start Feature 07 AI Profile Extraction from Resume.
-
-Before implementation:
+Start Feature 08 Resume PDF Generation from Profile.
 
 - Run `/remember restore`.
 - Follow the `AGENTS.md` reading order.
-- Use `/architect` because Feature 07 touches uploaded files, AI extraction, form population, and profile data boundaries.
-- Use the OpenAI docs skill before writing OpenAI API code.
-- Read the relevant Next.js docs in `node_modules/next/dist/docs/` before adding route handlers or form/extraction flow changes.
-- Preserve the existing Feature 06 profile save flow and extend it instead of replacing the form.
-- Implement extraction so the user can upload/select a resume, click Extract from Resume, review populated fields, and save manually.
-- Keep resume parsing failures user-friendly and avoid surfacing raw errors.
-- Update `context/progress-tracker.md` and `context/ui-registry.md` after Feature 07.
+- Use `/architect` because generation crosses profile data, GPT output, PDF rendering, storage replacement, and UI state.
+- Use the OpenAI docs skill before OpenAI API work.
+- Load the relevant installed skill before adding `@react-pdf/renderer`, then read the project-specific rules in `context/library-docs.md`.
+- Read the relevant installed Next.js 16 route-handler guidance before implementation.
+- Preserve Feature 06 saving and Feature 07 extraction behavior.
+- Update `context/progress-tracker.md` and `context/ui-registry.md` after Feature 08.
 
 ## Open questions
 
-- Which PDF text extraction library should Feature 07 use in this Next.js 16 app, and does it need special bundling/runtime handling?
-- Should extraction run from the currently selected unsaved file in the browser, or only from a resume that has already been uploaded and saved by Feature 06?
-- Should extracted values overwrite all form fields or only fill currently empty fields?
-- Should `.env.example` be added soon to document required public environment variables without secrets?
+- Should generated resumes replace the currently uploaded resume at the same stable storage key, as the existing architecture specifies, or should the user confirm replacement first?
+- Should generation use only saved profile data or allow the current unsaved form state?
+- Should `.env.example` be added to document required environment variable names without values?

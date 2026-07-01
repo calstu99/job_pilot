@@ -151,7 +151,7 @@ function parseOption<T extends string>(
   return options.find((option) => option.value === value)?.value ?? "";
 }
 
-function parseProfileValues(formData: FormData, email: string): ProfileFormValues {
+function parseProfileValues(formData: FormData): ProfileFormValues {
   return {
     coverLetterTone: parseOption(
       formString(formData, "cover_letter_tone"),
@@ -159,7 +159,7 @@ function parseProfileValues(formData: FormData, email: string): ProfileFormValue
     ),
     currentTitle: formString(formData, "current_title"),
     education: parseEducation(formData),
-    email,
+    email: formString(formData, "email"),
     experienceLevel: parseOption(
       formString(formData, "experience_level"),
       experienceLevelOptions,
@@ -259,8 +259,15 @@ export async function saveProfile(
     }
 
     const existingProfile = normalizeProfileRow(existingData);
-    const values = parseProfileValues(formData, user.email);
+    const values = parseProfileValues(formData);
     const yearsExperience = parseYearsExperience(values.yearsExperience);
+
+    if (!values.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      return {
+        message: "Enter a valid contact email address.",
+        success: false,
+      };
+    }
 
     if (values.yearsExperience && yearsExperience === null) {
       return {
@@ -311,7 +318,7 @@ export async function saveProfile(
       cover_letter_tone: values.coverLetterTone || null,
       current_title: optionalString(values.currentTitle),
       education: values.education,
-      email: user.email,
+      email: values.email,
       experience_level: values.experienceLevel || null,
       full_name: optionalString(values.fullName),
       industries: values.industries,

@@ -7,8 +7,8 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 2 — Profile Page
-**Last completed:** 06 Profile Save Logic
-**Next:** 07 AI Profile Extraction from Resume
+**Last completed:** 07 AI Profile Extraction from Resume
+**Next:** 08 Resume PDF Generation from Profile
 
 ---
 
@@ -25,7 +25,7 @@ Update this file after every completed feature. Any AI agent reading this should
 
 - [x] 05 Profile Page — Full UI
 - [x] 06 Profile Save Logic
-- [ ] 07 AI Profile Extraction from Resume
+- [x] 07 AI Profile Extraction from Resume
 - [ ] 08 Resume PDF Generation from Profile
 
 ### Phase 3 — Find Jobs Page
@@ -78,6 +78,10 @@ Update this file after every completed feature. Any AI agent reading this should
 - 2026-06-30 — Profile scalar fields and selects, including Cover Letter Tone, are controlled client state so submitted form data matches the visible values while server-derived completion UI can refresh independently.
 - 2026-06-30 — Profile select controls now use select-specific styling and input/change event syncing. Work Authorization spans the full Personal Info row so the native dropdown has the same reliable interaction area as the other profile selects.
 - 2026-06-30 — Profile completion ring now uses a smaller centered text treatment for `100%` so the complete-state number stays inside the circle while lower percentages keep the original larger type.
+- 2026-06-30 — Resume extraction runs from the currently selected unsaved PDF through authenticated `POST /api/resume/extract`. `pdf-parse` extracts server-side text and GPT-4o returns Zod-constrained profile data through the OpenAI Responses API.
+- 2026-06-30 — Extracted resume data only fills empty evidence-backed fields. Existing manual or saved values remain unchanged, email remains authenticated/read-only, and work authorization, remote preference, salary, preferred locations, and cover-letter tone are never inferred.
+- 2026-06-30 — Resume extraction is review-first: extracted values update client form state but are not persisted until the user clicks Save Profile. Invalid, oversized, image-only, and failed extractions return human-readable messages without raw errors.
+- 2026-06-30 — Profile email is an editable contact address that may differ from the authenticated login email. New profiles start with the login email, while subsequent saves validate and persist the form value without changing authentication identity.
 
 ---
 
@@ -88,3 +92,4 @@ Update this file after every completed feature. Any AI agent reading this should
 - 2026-06-29 — PostHog runtime expects `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST`. The code temporarily accepts the existing local `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` name as a fallback while env files migrate to the documented key name.
 - 2026-06-29 — `resumes` storage bucket exists and is private. App uploads should store files at `resumes/{user_id}/resume.pdf` and persist both URL and key.
 - 2026-06-30 — Feature 06 uses the installed `@insforge/sdk@1.4.3` shape: database calls go through `insforge.database.from(...)`, and storage uploads call `insforge.storage.from("resumes").upload(path, file)` without an options object.
+- 2026-06-30 — Feature 07 uses `openai@6.45.0`, `zod@4.4.3`, and `pdf-parse@2.4.5`. The current pdf-parse API is class-based: create `PDFParse` with PDF bytes, call `getText()`, and always call `destroy()`.

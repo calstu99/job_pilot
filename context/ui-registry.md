@@ -176,7 +176,7 @@ Last updated: 2026-06-30
 | Accent usage     | `bg-accent`, `text-accent`, `border-accent`, `focus:ring-accent`, `text-error`, `text-success`, SVG strokes using token CSS variables |
 
 **Pattern notes:**
-Feature 06 preserves the Feature 05 visual shell while moving editable controls into `components/profile/ProfileForm.tsx`. Scalar inputs and selects are controlled client state, with hidden JSON inputs for tag arrays and work experience, and `useActionState` for save feedback. Select controls keep the same 40px tokenized form-control shell but use select-specific cursor/appearance/pr classes so native dropdown hit areas remain reliable. Resume upload uses a styled label that matches the existing secondary button pattern while the real file input stays visually hidden. Missing-field chips in the attention banner behave as compact navigation buttons: they keep the badge styling, scroll to the relevant form section, and focus the first useful input in that section. The completion ring keeps `text-[34px]` for normal percentages and uses a centered `w-20 text-[30px]` treatment for `100%` so complete-state text stays inside the circle.
+Feature 06 preserves the Feature 05 visual shell while moving editable controls into `components/profile/ProfileForm.tsx`. Scalar inputs and selects are controlled client state, with hidden JSON inputs for tag arrays and work experience, and `useActionState` for save feedback. Contact email uses the standard editable email input pattern; it is initially populated from authentication but may diverge from the login identity. Select controls keep the same 40px tokenized form-control shell but use select-specific cursor/appearance/pr classes so native dropdown hit areas remain reliable. Resume upload uses a styled label that matches the existing secondary button pattern while the real file input stays visually hidden. Missing-field chips in the attention banner behave as compact navigation buttons: they keep the badge styling, scroll to the relevant form section, and focus the first useful input in that section. The completion ring keeps `text-[34px]` for normal percentages and uses a centered `w-20 text-[30px]` treatment for `100%` so complete-state text stays inside the circle.
 
 ### Protected Header
 
@@ -197,3 +197,23 @@ Last updated: 2026-06-30
 
 **Pattern notes:**
 Protected pages share this header for authenticated navigation and logout. The sign out control is a Server Action form button so it clears SSR auth cookies without adding client-side auth state. Dashboard, Find Jobs, Job Details, and Profile should use this component until a later full-page UI phase replaces the surrounding content.
+
+### Resume Extraction Controls
+
+File: components/profile/ProfileForm.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface-secondary` for the extraction panel, `bg-success-lightest` or `bg-error/5` for feedback |
+| Border           | `border-border`, `border-success/20`, `border-error/20` |
+| Border radius    | `rounded-xl` for panel and primary action, `rounded-lg` for feedback |
+| Text — primary   | `text-text-secondary` for guidance |
+| Text — secondary | `text-success-foreground`, `text-error` for status |
+| Spacing          | `p-4`, `px-6 py-3`, `px-4 py-3`, `gap-3` |
+| Hover state      | disabled actions use `disabled:cursor-not-allowed disabled:opacity-70` |
+| Shadow           | `shadow-sm` on the extraction action |
+| Accent usage     | `bg-accent text-accent-foreground` for Extract from Resume |
+
+**Pattern notes:**
+Resume extraction stays inside the existing Resume card and appears only after a local PDF is selected. Async feedback uses token-colored bordered messages with `aria-live="polite"`. The primary action retains the profile page’s rounded accent-button treatment and swaps its label to `Extracting...` while disabled.
