@@ -1,46 +1,23 @@
+import type {
+  DashboardActivity,
+  DashboardActivityItem,
+  DashboardStats,
+} from "@/lib/dashboard";
+
 type StatCardProps = {
   helper: string;
   label: string;
-  trend?: string;
   value: string;
 };
 
-type ActivityItem = {
-  color: "accent" | "info" | "success";
-  label: string;
-  time: string;
-};
-
-const activities: ActivityItem[] = [
-  {
-    color: "accent",
-    label: "Found 8 jobs for Frontend Engineer",
-    time: "10 mins ago",
-  },
-  { color: "info", label: "Researched Stripe", time: "1 hour ago" },
-  {
-    color: "success",
-    label: "Found 12 jobs for React Developer",
-    time: "2 hours ago",
-  },
-  { color: "accent", label: "Researched Vercel", time: "Yesterday" },
-  {
-    color: "success",
-    label: "Found 10 jobs for Full Stack Engineer",
-    time: "Yesterday",
-  },
-];
-
 const activityDotClasses = {
-  accent: "bg-accent ring-accent-light",
   info: "bg-info ring-info-light",
   success: "bg-success ring-success-light",
-} satisfies Record<ActivityItem["color"], string>;
+} satisfies Record<DashboardActivityItem["color"], string>;
 
 function StatCard({
   helper,
   label,
-  trend,
   value,
 }: StatCardProps): React.ReactNode {
   return (
@@ -51,12 +28,7 @@ function StatCard({
       <p className="mt-2 text-[36px] font-semibold leading-[44px] tracking-[-0.02em] text-text-primary">
         {value}
       </p>
-      <div className="mt-3 flex min-h-7 items-center gap-3">
-        {trend ? (
-          <span className="rounded-md bg-success-lightest px-2 py-1 text-[13px] font-semibold leading-5 text-success-foreground">
-            {trend}
-          </span>
-        ) : null}
+      <div className="mt-3 flex min-h-7 items-center">
         <span className="text-[13px] font-medium leading-5 text-text-muted">
           {helper}
         </span>
@@ -75,37 +47,62 @@ function CardHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RecentActivity(): React.ReactNode {
+function RecentActivity({
+  activity,
+}: {
+  activity: DashboardActivity;
+}): React.ReactNode {
   return (
     <section className="rounded-xl border border-border bg-surface shadow-sm">
       <CardHeading>Recent Activity</CardHeading>
-      <ol className="px-6 py-3 sm:px-7">
-        {activities.map((activity, index) => (
-          <li
-            key={`${activity.label}-${activity.time}`}
-            className="relative flex gap-5 py-4"
-          >
-            {index < activities.length - 1 ? (
+      {activity.items.length > 0 ? (
+        <ol className="px-6 py-3 sm:px-7">
+          {activity.items.map((item, index) => (
+            <li key={item.id} className="relative flex gap-5 py-4">
+              {index < activity.items.length - 1 ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-[5px] top-7 h-[calc(100%-14px)] w-px bg-border"
+                />
+              ) : null}
               <span
                 aria-hidden="true"
-                className="absolute left-[5px] top-7 h-[calc(100%-14px)] w-px bg-border"
+                className={`relative mt-1.5 h-3 w-3 shrink-0 rounded-full ring-4 ${activityDotClasses[item.color]}`}
               />
-            ) : null}
-            <span
-              aria-hidden="true"
-              className={`relative mt-1.5 h-3 w-3 shrink-0 rounded-full ring-4 ${activityDotClasses[activity.color]}`}
-            />
-            <div>
-              <p className="text-[15px] font-semibold leading-6 text-text-primary">
-                {activity.label}
-              </p>
-              <p className="mt-1 text-[13px] font-medium leading-5 text-text-muted">
-                {activity.time}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ol>
+              <div>
+                <p className="text-[15px] font-semibold leading-6 text-text-primary">
+                  {item.label}
+                </p>
+                <time
+                  dateTime={item.occurredAt}
+                  className="mt-1 block text-[13px] font-medium leading-5 text-text-muted"
+                >
+                  {item.time}
+                </time>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <div className="px-6 py-12 text-center sm:px-7">
+          <p className="text-[15px] font-semibold leading-6 text-text-primary">
+            {activity.error ? "Activity is unavailable" : "No activity yet"}
+          </p>
+          <p className="mt-1 text-[13px] font-medium leading-5 text-text-muted">
+            {activity.error
+              ? "Refresh the page to try loading it again."
+              : "Find jobs or research a company to get started."}
+          </p>
+        </div>
+      )}
+      {activity.error && activity.items.length > 0 ? (
+        <p
+          role="status"
+          className="border-t border-border px-6 py-3 text-[13px] font-medium leading-5 text-text-muted sm:px-7"
+        >
+          Some recent activity could not be loaded.
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -297,7 +294,17 @@ function MatchDistributionChart(): React.ReactNode {
   );
 }
 
-export function DashboardOverview(): React.ReactNode {
+function formatStat(value: number | null, suffix = ""): string {
+  return value === null ? "—" : `${value.toLocaleString()}${suffix}`;
+}
+
+export function DashboardOverview({
+  activity,
+  stats,
+}: {
+  activity: DashboardActivity;
+  stats: DashboardStats;
+}): React.ReactNode {
   return (
     <div className="space-y-6">
       <section
@@ -306,26 +313,28 @@ export function DashboardOverview(): React.ReactNode {
       >
         <StatCard
           label="Total Jobs Found"
-          value="284"
-          trend="+12%"
-          helper="vs last week"
+          value={formatStat(stats.totalJobs)}
+          helper="All saved jobs"
         />
         <StatCard
           label="Avg. Match Rate"
-          value="82%"
-          trend="+3%"
-          helper="vs last week"
+          value={formatStat(stats.averageMatchRate, "%")}
+          helper="Across all jobs"
         />
         <StatCard
           label="Companies Researched"
-          value="35"
+          value={formatStat(stats.companiesResearched)}
           helper="Total researched"
         />
-        <StatCard label="Jobs This Week" value="28" helper="New this week" />
+        <StatCard
+          label="Jobs This Week"
+          value={formatStat(stats.jobsThisWeek)}
+          helper="Last 7 days"
+        />
       </section>
 
       <div className="grid items-stretch gap-6 xl:grid-cols-2">
-        <RecentActivity />
+        <RecentActivity activity={activity} />
         <CompanyResearchChart />
       </div>
 

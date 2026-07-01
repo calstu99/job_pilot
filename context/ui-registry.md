@@ -347,13 +347,13 @@ Last updated: 2026-07-01
 | ---------------- | --------------- |
 | Background       | `bg-background` for page, `bg-surface` for cards |
 | Border           | `border-border`, chart guides use `border-dashed border-border` |
-| Border radius    | `rounded-xl` for cards, `rounded-md` for trends and chart bars, `rounded-full` for activity dots |
-| Text — primary   | `text-text-primary` |
-| Text — secondary | `text-text-secondary`, `text-text-muted` |
-| Spacing          | `px-6 py-8` page shell, `px-6 py-7` stat cards, `px-6 py-5` card headings, `gap-5` and `gap-6` grids |
+| Border radius    | `rounded-xl` for cards, `rounded-md` for chart bars, `rounded-full` for activity dots |
+| Text — primary   | `text-text-primary`; 36px semibold values, 18px semibold card headings, 15px semibold activity labels |
+| Text — secondary | `text-text-secondary`, `text-text-muted`; 14px stat labels, 13px helpers and timestamps, 10–11px chart labels |
+| Spacing          | `px-6 py-8` page shell, `px-6 py-7` stat cards, `px-6 py-5` card headings, `px-6 py-3` activity list, `px-6 py-12` activity empty state, `px-4 py-6` chart bodies, `gap-5` and `gap-6` |
 | Hover state      | none |
 | Shadow           | `shadow-sm` |
-| Accent usage     | `bg-accent`, `stroke-accent`, `bg-info`, `bg-success`, `bg-success-lightest text-success-foreground` |
+| Accent usage     | `bg-accent ring-accent-light`, `stroke-accent`, `bg-info ring-info-light`, `bg-success ring-success-light` |
 
 **Pattern notes:**
-The dashboard follows `context/designs/dashboard.png` as the visual source of truth, including its Jobs This Week stat and Company Research Activity chart where the older build-plan copy differs. Stat cards share one fixed hierarchy: 14px muted label, 36px semibold value, then a 13px helper row. Analytics cards use a bordered heading band and token-colored, accessible SVG/CSS charts. The four-card stats grid, paired middle row, and two-to-one lower chart row collapse to stacked cards below their respective breakpoints. Feature 14 uses static mock data and remains a Server Component; database and PostHog data wiring belongs to Features 15–17.
+The dashboard follows `context/designs/dashboard.png` as the visual source of truth, including its Jobs This Week stat and Company Research Activity chart where the older build-plan copy differs. Stat cards share one fixed hierarchy: 14px muted label, 36px semibold value, then a 13px helper row. Real values come from owner-scoped server reads; unavailable values render an em dash without changing card geometry. Trend badges stay absent until a real comparison period exists. Recent activity merges completed searches (success dots) and company research (info dots), uses semantic `<time>` elements, and keeps the existing vertical timeline. Its centered empty/error state reuses 15px primary and 13px muted copy; partial query failures append a quiet bordered status row without hiding successful entries. Analytics cards use a bordered heading band and token-colored, accessible SVG/CSS charts. The four-card stats grid, paired middle row, and two-to-one lower chart row collapse to stacked cards below their respective breakpoints. Chart data remains deferred to Feature 17.

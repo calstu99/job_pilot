@@ -7,8 +7,8 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 5 — Dashboard
-**Last completed:** 14 Dashboard Page — Full UI
-**Next:** 15 Stats Bar — Real Data
+**Last completed:** 16 Recent Activity — Real Data
+**Next:** 17 Analytics Charts — PostHog Data
 
 ---
 
@@ -42,14 +42,19 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 5 — Dashboard
 
 - [x] 14 Dashboard Page — Full UI
-- [ ] 15 Stats Bar — Real Data
-- [ ] 16 Recent Activity — Real Data
+- [x] 15 Stats Bar — Real Data
+- [x] 16 Recent Activity — Real Data
 - [ ] 17 Analytics Charts — PostHog Data
 
 ---
 
 ## Decisions Made During Build
 
+- 2026-07-01 — Feature 16 merges the current user's five newest completed job searches and timestamped company research records, sorts them by occurrence time, and renders human-readable relative times over semantic `<time>` values. Search entries use success dots and research entries use info dots.
+- 2026-07-01 — Migration `20260701232211_add-company-researched-at.sql` adds nullable `jobs.company_researched_at`, a partial owner-and-time index, and a column-scoped authenticated update grant. Successful research persistence now writes the dossier and timestamp together; pre-migration dossiers are intentionally not backfilled because their actual research time is unknown.
+- 2026-07-01 — Recent activity queries fail independently. Successful entries remain visible with a partial-data notice; a total failure gets retry guidance, and users with no qualifying activity get a deliberate empty state.
+- 2026-07-01 — Feature 15 loads all four dashboard stats through concurrent owner-scoped InsForge reads in the Dashboard Server Component. Total jobs, researched companies, and rolling seven-day jobs use exact database counts; average match rate rounds the mean of non-null saved scores to the nearest whole percent.
+- 2026-07-01 — Dashboard stat queries fail independently: unavailable values render an em dash while successful values and the rest of the dashboard remain visible. Empty datasets render zero, and mock comparison badges were removed because Feature 15 does not yet provide a real prior-period comparison.
 - 2026-07-01 — Feature 14 replaces the protected dashboard placeholder with a responsive static dashboard matching `context/designs/dashboard.png`. The delivered mock is the visual source of truth where the older build plan differs, so the fourth stat is Jobs This Week and the weekday chart is Company Research Activity.
 - 2026-07-01 — Dashboard charts use accessible, token-colored SVG and CSS with mock data rather than a client charting dependency. The page remains a Server Component with real InsForge and PostHog data deferred to Features 15 through 17.
 - 2026-07-01 — Feature 13 runs synchronously from the job-details client: the research action shows an explicit one-to-two-minute loading state, waits for browsing, synthesis, and persistence, then refreshes the Server Component data.

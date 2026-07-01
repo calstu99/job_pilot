@@ -261,6 +261,7 @@ URL saved to profiles table
 | matched_skills     | text[]      | Skills user has that match                     |
 | missing_skills     | text[]      | Skills user lacks                              |
 | company_research   | jsonb       | Company dossier from research agent            |
+| company_researched_at | timestamptz | Set when company research is persisted       |
 | found_at           | timestamptz |                                                |
 
 ### `agent_logs`

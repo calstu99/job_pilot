@@ -251,7 +251,10 @@ export async function POST(request: Request): Promise<Response> {
 
     const updateResult = await insforge.database
       .from("jobs")
-      .update({ company_research: researchResult.dossier })
+      .update({
+        company_research: researchResult.dossier,
+        company_researched_at: new Date().toISOString(),
+      })
       .eq("id", parsedRequest.data.jobId)
       .eq("user_id", user.id)
       .select("id")
