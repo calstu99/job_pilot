@@ -1,12 +1,12 @@
 import { z } from "zod";
 
 export const generatedRoleContentSchema = z.object({
-  bulletPoints: z.array(z.string().min(1).max(220)).min(1).max(2),
+  bulletPoints: z.array(z.string().min(1).max(120)).min(1).max(2),
   roleIndex: z.number().int().min(0).max(2),
 });
 
 export const generatedResumeContentSchema = z.object({
-  professionalSummary: z.string().min(1).max(500),
+  professionalSummary: z.string().min(1).max(260),
   roles: z.array(generatedRoleContentSchema).min(1).max(3),
 });
 

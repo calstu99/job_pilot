@@ -5,6 +5,7 @@ import {
 } from "@/lib/insforge-server";
 import {
   createProfileViewModel,
+  isCompleteWorkExperienceRole,
   normalizeProfileRow,
   type ProfileViewModel,
 } from "@/lib/profile";
@@ -50,12 +51,7 @@ function hasMinimumResumeProfile(profile: ProfileViewModel): boolean {
       profile.email.trim() &&
       profile.currentTitle.trim() &&
       profile.skills.length > 0 &&
-      profile.workExperience.some(
-        (role) =>
-          role.companyName.trim() &&
-          role.jobTitle.trim() &&
-          role.responsibilities.trim(),
-      ),
+      profile.workExperience.some(isCompleteWorkExperienceRole),
   );
 }
 

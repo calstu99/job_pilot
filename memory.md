@@ -1,74 +1,71 @@
-# Memory — Feature 07 AI Profile Extraction from Resume
+# Memory — Feature 08 Resume PDF Generation from Profile
 
-Last updated: 2026-06-30 17:27 PDT
+Last updated: 2026-06-30 18:03 PDT
 
 ## What was built
 
-Completed Feature 07 AI Profile Extraction from Resume.
+Feature 08 is implemented but not yet marked complete because two review findings remain open.
 
-- Added `app/api/resume/extract/route.ts` as an authenticated PDF extraction endpoint with file type, signature, size, and text-content validation.
-- Added `agent/profile-extractor.ts` for GPT-4o structured resume extraction through the OpenAI Responses API.
-- Added `lib/profile-extraction.ts` for shared Zod schemas, extraction types, and API response validation.
+- Added `app/api/resume/generate/route.ts` for authenticated generation from the current user's saved profile.
+- Added `agent/resume-generator.ts` for GPT-4o structured professional summaries and polished work-experience bullets through the OpenAI Responses API.
+- Added `lib/resume-generation.ts` for shared Zod schemas, types, and client response validation.
+- Added `lib/resume-pdf.tsx` for server-side A4 PDF rendering with `@react-pdf/renderer`.
+- Added `@react-pdf/renderer@4.5.1`.
 - Extended `components/profile/ProfileForm.tsx` with:
-  - Extract from Resume controls after a local PDF is selected.
-  - Loading, success, and friendly failure states.
-  - Client-side population of empty profile fields for manual review before saving.
-- Added `openai`, `zod`, and `pdf-parse` dependencies and configured `pdf-parse` as a server-external package in `next.config.ts`.
-- Updated `actions/profile.ts` so the profile contact email is editable, validated, and persisted independently from the authenticated login email.
-- Updated `context/architecture.md`, `context/build-plan.md`, `context/library-docs.md`, `context/progress-tracker.md`, and `context/ui-registry.md`.
+  - Existing-resume replacement confirmation.
+  - Generation loading, success, and friendly failure states.
+  - Reset behavior that prevents a previously selected local PDF from overwriting a newly generated resume on the next profile save.
+- Added `app/api/resume/view/route.ts` and a `View Resume` control that opens the active private PDF through an authenticated inline response.
+- Updated `context/ui-registry.md` with the Resume View Control pattern.
 
 ## Decisions made
 
-- Extraction runs from the currently selected unsaved PDF; the file does not need to be uploaded first.
-- Extracted data fills only empty fields. Existing saved values and manual edits are preserved.
-- Extraction is evidence-based and supports contact details except email, links, professional information, skills, industries, up to three work roles, education, and likely job titles.
-- GPT-4o does not infer work authorization, remote preference, salary expectations, preferred locations, or cover-letter tone.
-- Extracted values remain client-side until the user explicitly clicks Save Profile.
-- Profile contact email may differ from the login email. Authentication identity remains unchanged.
-- Email is excluded from AI resume extraction so an authenticated user's contact address is not silently replaced.
+- Generation uses saved profile data only. Unsaved form edits must be saved first.
+- Generation requires full name, contact email, current title, at least one skill, and one complete work-experience role. It does not require 100% profile completion.
+- GPT-4o may polish wording but must not invent employers, titles, dates, responsibilities, achievements, metrics, skills, education, or credentials.
+- Job preferences, salary, work authorization, industries, and cover-letter tone are excluded from generated resumes.
+- A generated resume replaces the one active resume at `resumes/{user_id}/resume.pdf`.
+- Users must confirm replacement when an active resume already exists.
+- The route attempts to restore the prior file if the storage upload succeeds but the profile database update fails.
+- Resume viewing goes through an authenticated route because the storage bucket is private.
 
 ## Problems solved
 
-- Resolved the project documentation's outdated `pdf-parse` v1 example. Installed `pdf-parse@2.4.5` uses the class-based `PDFParse({ data })`, `getText()`, and `destroy()` lifecycle.
-- Added `serverExternalPackages: ["pdf-parse"]` for the current Next.js 16 server build.
-- Runtime-validates extraction API responses in the client instead of trusting a TypeScript assertion.
-- Handles invalid, oversized, image-only, and failed PDF extraction paths with human-readable messages and no raw error exposure.
-- Changed the Personal Info email field from read-only auth data to an editable contact address and added server-side validation.
-- Verification completed:
-  - `npm run lint` passes.
-  - `npx tsc --noEmit` passes.
-  - `npm run build` passes when network access is allowed for the Inter font fetch.
-  - `git diff --check` passes.
+- Used the installed OpenAI Responses API and Zod structured-output pattern rather than the outdated Chat Completions example in project documentation.
+- Verified the installed InsForge SDK accepts `File | Blob` uploads and persists both returned `url` and `key`.
+- Converted the React PDF Node buffer to a typed byte array before creating a `Blob`, resolving the Node `Buffer<ArrayBufferLike>` versus browser `BlobPart` TypeScript mismatch.
+- The first production build could not fetch Inter inside the restricted network sandbox; the build passed when network access was allowed.
+- Verification currently passes:
+  - `npx tsc --noEmit`
+  - `npm run lint`
+  - `npm run build`
+  - `git diff --check`
+- The worktree was clean when this memory was saved.
 
 ## Current state
 
-- Phase 1 Foundation is complete.
-- Phase 2 Profile Page:
-  - 05 Profile Page — Full UI is complete.
-  - 06 Profile Save Logic is complete.
-  - 07 AI Profile Extraction from Resume is complete.
-  - 08 Resume PDF Generation from Profile is next.
-- `/profile` supports real profile loading/saving, resume upload, GPT-4o extraction into empty fields, completion calculation, and an editable contact email.
-- Resume generation remains disabled and visual-only.
+- Features 05, 06, and 07 are complete.
+- Feature 08 generation and authenticated PDF viewing work at the code/build level.
+- `context/progress-tracker.md` still lists Feature 08 as next because final review has not passed.
+- `context/ui-registry.md` includes the new Resume View Control, but the broader Feature 08 generation UI should only be finalized after the open review issues are resolved.
 - Dashboard, Find Jobs, and Job Details remain protected placeholders.
-- The worktree is dirty with uncommitted Feature 07 changes. Do not assume every modified profile or context file belongs only to the final email follow-up.
-- A credential was exposed in conversation during this session. It was not copied here or used by the implementation; it must be revoked/rotated if that has not already happened.
+- A credential was exposed in an earlier conversation. It was not copied here or used by this implementation; it must be revoked or rotated if that has not already happened.
 
 ## Next session starts with
 
-Start Feature 08 Resume PDF Generation from Profile.
+Resolve the two Feature 08 review findings:
 
-- Run `/remember restore`.
-- Follow the `AGENTS.md` reading order.
-- Use `/architect` because generation crosses profile data, GPT output, PDF rendering, storage replacement, and UI state.
-- Use the OpenAI docs skill before OpenAI API work.
-- Load the relevant installed skill before adding `@react-pdf/renderer`, then read the project-specific rules in `context/library-docs.md`.
-- Read the relevant installed Next.js 16 route-handler guidance before implementation.
-- Preserve Feature 06 saving and Feature 07 extraction behavior.
-- Update `context/progress-tracker.md` and `context/ui-registry.md` after Feature 08.
+1. Filter saved work history so only complete roles are sent to GPT-4o and rendered.
+2. Tighten or dynamically constrain summary, skills, roles, and bullet content so the single A4 page cannot overflow or clip.
+
+Then:
+
+- Re-run TypeScript, lint, production build, and `git diff --check`.
+- Run `/review` again.
+- Run `/imprint` for the completed generation controls.
+- Mark Feature 08 complete in `context/progress-tracker.md`.
+- Update `context/ui-registry.md` and any affected architecture/library documentation.
 
 ## Open questions
 
-- Should generated resumes replace the currently uploaded resume at the same stable storage key, as the existing architecture specifies, or should the user confirm replacement first?
-- Should generation use only saved profile data or allow the current unsaved form state?
 - Should `.env.example` be added to document required environment variable names without values?

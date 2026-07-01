@@ -1,26 +1,24 @@
+import { JobFilters } from "@/components/find-jobs/JobFilters";
+import { JobsPagination } from "@/components/find-jobs/JobsPagination";
+import { JobsTable } from "@/components/find-jobs/JobsTable";
+import { SearchControls } from "@/components/find-jobs/SearchControls";
 import { ProtectedHeader } from "@/components/layout/ProtectedHeader";
 import { requireUser } from "@/lib/insforge-server";
 
 export const dynamic = "force-dynamic";
 
 export default async function FindJobsPage(): Promise<React.ReactNode> {
-  const user = await requireUser();
+  await requireUser();
 
   return (
     <main className="min-h-screen bg-background">
       <ProtectedHeader activePage="find-jobs" />
-      <div className="px-6 py-8 sm:px-10 lg:px-20">
-        <section className="mx-auto max-w-[1440px] rounded-xl border border-border bg-surface p-6 shadow-sm">
-          <p className="text-[12px] font-medium uppercase leading-4 text-accent">
-            Find Jobs
-          </p>
-          <h1 className="mt-3 text-[30px] font-semibold leading-9 text-text-primary">
-            Job discovery
-          </h1>
-          <p className="mt-3 text-[14px] font-medium leading-5 text-text-secondary">
-            You are signed in as {user.email}. The search experience is
-            scheduled for Phase 3.
-          </p>
+      <div className="mx-auto max-w-[1440px] space-y-6 px-6 py-8 sm:px-8 lg:py-12">
+        <SearchControls />
+        <JobFilters />
+        <section className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+          <JobsTable />
+          <JobsPagination />
         </section>
       </div>
     </main>

@@ -124,6 +124,16 @@ export const emptyWorkExperienceRole: WorkExperienceRole = {
   startDate: "",
 };
 
+export function isCompleteWorkExperienceRole(
+  role: WorkExperienceRole,
+): boolean {
+  return Boolean(
+    role.companyName.trim() &&
+      role.jobTitle.trim() &&
+      role.responsibilities.trim(),
+  );
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -258,12 +268,7 @@ export function calculateProfileCompletion(
     { label: "SKILLS", present: profile.skills.length > 0 },
     {
       label: "WORK EXPERIENCE",
-      present: profile.workExperience.some(
-        (role) =>
-          Boolean(role.companyName.trim()) &&
-          Boolean(role.jobTitle.trim()) &&
-          Boolean(role.responsibilities.trim()),
-      ),
+      present: profile.workExperience.some(isCompleteWorkExperienceRole),
     },
     {
       label: "EDUCATION",

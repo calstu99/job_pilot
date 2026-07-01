@@ -237,3 +237,83 @@ Last updated: 2026-06-30
 
 **Pattern notes:**
 The active saved resume uses a quiet secondary action beneath the upload status. `View Resume` opens the authenticated inline PDF route in a new tab; the control is hidden when no persisted resume exists and does not preview a locally selected unsaved file.
+
+### Resume Generation Controls
+
+File: components/profile/ProfileForm.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface-secondary` for guidance, `bg-accent` for the action, `bg-success-lightest` or `bg-error/5` for feedback |
+| Border           | `border-border`, `border-success/20`, `border-error/20` |
+| Border radius    | `rounded-xl` for panel and action, `rounded-lg` for feedback |
+| Text — primary   | `text-text-dark`, `text-accent-foreground` |
+| Text — secondary | `text-text-secondary`, `text-text-muted`, status token colors |
+| Spacing          | `p-4`, `px-8 py-3`, `mt-6`, `px-4 py-3`, `gap-4` |
+| Hover state      | disabled actions use `disabled:cursor-not-allowed disabled:opacity-70` |
+| Shadow           | `shadow-sm` on the generation action |
+| Accent usage     | `bg-accent text-accent-foreground` for Generate Resume from Profile |
+
+**Pattern notes:**
+Resume generation stays inside the Resume card and clearly states that it uses saved profile data. The primary action swaps to `Generating...` while disabled, existing resumes require replacement confirmation, and success or failure feedback uses the same tokenized live-region pattern as resume extraction.
+
+### Find Jobs Search Controls
+
+File: components/find-jobs/SearchControls.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface` for card and controls, `bg-success-lightest` for success feedback |
+| Border           | `border-border`, `border-success-light` |
+| Border radius    | `rounded-xl` for card, `rounded-lg` for controls and feedback |
+| Text — primary   | `text-text-primary`, `text-text-dark`, `text-accent-foreground` |
+| Text — secondary | `text-text-muted`, `text-success-dark` |
+| Spacing          | `p-6`, `gap-5`, `px-4`, `px-7`, `mt-5` |
+| Hover state      | none for Feature 09 mock controls |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `bg-accent`, `focus-within:ring-accent`, `focus:ring-accent` |
+
+**Pattern notes:**
+Find Jobs search uses uppercase 12px field labels, 48px controls, and a full-width tokenized success banner beneath the desktop control row. The controls stack on smaller screens and remain visual-only until Feature 10.
+
+### Job Filter Bar
+
+File: components/find-jobs/JobFilters.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface` |
+| Border           | `border-border` |
+| Border radius    | `rounded-xl` for bar, `rounded-lg` for selects |
+| Text — primary   | `text-text-primary`, `text-text-dark` |
+| Text — secondary | `text-text-muted` |
+| Spacing          | `p-4`, `gap-3`, `gap-4`, `px-4` |
+| Hover state      | none for Feature 09 mock controls |
+| Shadow           | `shadow-sm` |
+| Accent usage     | `focus:ring-accent`, `focus:border-accent` |
+
+**Pattern notes:**
+Job list filtering uses one quiet search field followed by bordered select controls. A token-colored divider separates search from desktop filters, while mobile uses a stacked layout without the divider.
+
+### Jobs Results Table
+
+File: components/find-jobs/JobsTable.tsx, components/find-jobs/JobsPagination.tsx
+Last updated: 2026-06-30
+
+| Property         | Class           |
+| ---------------- | --------------- |
+| Background       | `bg-surface` for rows and buttons, `bg-surface-secondary` for header, pagination, icons, and row hover |
+| Border           | `border-border`, active page uses `border-accent-light` |
+| Border radius    | `rounded-xl` for outer card, `rounded-lg` for icons and pagination controls, `rounded-full` for score bars |
+| Text — primary   | `text-text-primary`, `text-text-dark` |
+| Text — secondary | `text-text-secondary`, `text-text-muted` |
+| Spacing          | `px-8 py-5` table cells, `px-6 py-5` pagination, `gap-2`, `gap-3`, `gap-4` |
+| Hover state      | `hover:bg-surface-secondary` |
+| Shadow           | `shadow-sm` on outer card and pagination buttons |
+| Accent usage     | `bg-accent-muted text-accent` for active page; score fills use `bg-success`, `bg-info-medium`, and `bg-warning` |
+
+**Pattern notes:**
+Jobs tables use uppercase 12px headers, white rows separated by token borders, 16px primary row content, and inline 6px match bars. The desktop table scrolls horizontally on narrow screens instead of collapsing columns; pagination wraps naturally below it.

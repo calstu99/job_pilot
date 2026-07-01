@@ -492,26 +492,32 @@ const response = await openai.chat.completions.create({
 
 ```typescript
 import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const resultSchema = z.object({
+  summary: z.string().max(260),
+});
 
-const response = await openai.chat.completions.create({
+const openai = new OpenAI();
+const response = await openai.responses.parse({
   model: "gpt-4o",
-  response_format: { type: "json_object" },
-  temperature: 0.3,
-  messages: [
+  input: [
     {
       role: "system",
-      content: "You are a job matching assistant. Return only valid JSON.",
+      content: "Return concise content grounded only in the supplied facts.",
     },
     {
       role: "user",
-      content: `Your prompt here`,
+      content: JSON.stringify({ input: "Your data here" }),
     },
   ],
+  text: {
+    format: zodTextFormat(resultSchema, "result"),
+  },
 });
 
-const result = JSON.parse(response.choices[0].message.content!);
+const result = response.output_parsed;
 ```
 
 **Temperature settings:**
@@ -529,9 +535,9 @@ const result = JSON.parse(response.choices[0].message.content!);
 **Rules:**
 
 - Model string is always `'gpt-4o'` — never use other model names
-- Always use `response_format: { type: 'json_object' }` for structured data
-- Always parse `response.choices[0].message.content` as string — even with json_object it returns a string
-- Always validate parsed JSON before using — wrap in try/catch
+- Use `openai.responses.parse()` with `zodTextFormat()` for structured data
+- Treat `response.output_parsed` as nullable and return a friendly failure when it is absent
+- Keep schema constraints and prompt constraints aligned
 - Match threshold is always `MATCH_THRESHOLD` from `lib/utils.ts` — never hardcode 70
 - Company research synthesis must always return a complete dossier — never return empty even if browser research failed
 

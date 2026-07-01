@@ -6,9 +6,9 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ## Current Status
 
-**Phase:** Phase 2 — Profile Page
-**Last completed:** 07 AI Profile Extraction from Resume
-**Next:** 08 Resume PDF Generation from Profile
+**Phase:** Phase 3 — Find Jobs Page
+**Last completed:** 09 Find Jobs Page — Full UI
+**Next:** 10 Adzuna Job Discovery
 
 ---
 
@@ -26,11 +26,11 @@ Update this file after every completed feature. Any AI agent reading this should
 - [x] 05 Profile Page — Full UI
 - [x] 06 Profile Save Logic
 - [x] 07 AI Profile Extraction from Resume
-- [ ] 08 Resume PDF Generation from Profile
+- [x] 08 Resume PDF Generation from Profile
 
 ### Phase 3 — Find Jobs Page
 
-- [ ] 09 Find Jobs Page — Full UI
+- [x] 09 Find Jobs Page — Full UI
 - [ ] 10 Adzuna Job Discovery
 - [ ] 11 Filter + Sort + Pagination
 
@@ -82,6 +82,13 @@ Update this file after every completed feature. Any AI agent reading this should
 - 2026-06-30 — Extracted resume data only fills empty evidence-backed fields. Existing manual or saved values remain unchanged, email remains authenticated/read-only, and work authorization, remote preference, salary, preferred locations, and cover-letter tone are never inferred.
 - 2026-06-30 — Resume extraction is review-first: extracted values update client form state but are not persisted until the user clicks Save Profile. Invalid, oversized, image-only, and failed extractions return human-readable messages without raw errors.
 - 2026-06-30 — Profile email is an editable contact address that may differ from the authenticated login email. New profiles start with the login email, while subsequent saves validate and persist the form value without changing authentication identity.
+- 2026-06-30 — Resume generation reads only saved profile data, uses GPT-4o Structured Outputs for a bounded professional summary and role bullets, renders a single-page A4 PDF server-side, and replaces the one active private resume after explicit confirmation.
+- 2026-06-30 — Only work-experience roles with company, title, and responsibilities are sent to GPT-4o or rendered. Original role indexes are preserved so generated bullet points remain attached to the correct saved role.
+- 2026-06-30 — Single-page resume output is protected by schema-level character budgets, capped skills, and line-limited PDF text with ellipsis so user-controlled content cannot clip the A4 layout.
+- 2026-06-30 — Generated resumes are viewed through authenticated `GET /api/resume/view`; private storage URLs are never exposed as direct public links.
+- 2026-06-30 — Find Jobs full UI implemented from `context/designs/find-jobs.png` as token-only mock Server Components. It includes the search card and success banner, filter controls, six-row score table, and pagination with no Adzuna, database, filtering, sorting, or pagination behavior yet.
+- 2026-06-30 — The delivered Find Jobs mock is the visual source of truth for Feature 09, so the table mirrors its five visible columns and does not add the build-plan-only Source column at this stage.
+- 2026-06-30 — Find Jobs mock data is isolated in `components/find-jobs/JobsTable.tsx`; the table uses horizontal overflow below its desktop minimum width while the search, filters, and pagination reflow responsively.
 
 ---
 
@@ -93,3 +100,4 @@ Update this file after every completed feature. Any AI agent reading this should
 - 2026-06-29 — `resumes` storage bucket exists and is private. App uploads should store files at `resumes/{user_id}/resume.pdf` and persist both URL and key.
 - 2026-06-30 — Feature 06 uses the installed `@insforge/sdk@1.4.3` shape: database calls go through `insforge.database.from(...)`, and storage uploads call `insforge.storage.from("resumes").upload(path, file)` without an options object.
 - 2026-06-30 — Feature 07 uses `openai@6.45.0`, `zod@4.4.3`, and `pdf-parse@2.4.5`. The current pdf-parse API is class-based: create `PDFParse` with PDF bytes, call `getText()`, and always call `destroy()`.
+- 2026-06-30 — Feature 08 uses `openai.responses.parse()` with `zodTextFormat()` and `@react-pdf/renderer@4.5.1`. Resume PDF text uses supported `maxLines` and `textOverflow: "ellipsis"` safeguards to preserve one-page output.

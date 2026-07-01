@@ -7,7 +7,11 @@ import {
   View,
   renderToBuffer,
 } from "@react-pdf/renderer";
-import type { ProfileViewModel, WorkExperienceRole } from "@/lib/profile";
+import {
+  isCompleteWorkExperienceRole,
+  type ProfileViewModel,
+  type WorkExperienceRole,
+} from "@/lib/profile";
 import type { GeneratedResumeContent } from "@/lib/resume-generation";
 
 const styles = StyleSheet.create({
@@ -15,20 +19,28 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     lineHeight: 1.35,
     marginBottom: 2,
+    maxLines: 2,
+    textOverflow: "ellipsis",
   },
   contact: {
     color: "gray",
     fontSize: 8,
     lineHeight: 1.4,
+    maxLines: 1,
     textAlign: "center",
+    textOverflow: "ellipsis",
   },
   educationDetail: {
     color: "gray",
     fontSize: 8,
+    maxLines: 1,
+    textOverflow: "ellipsis",
   },
   educationTitle: {
     fontSize: 9,
     fontWeight: 700,
+    maxLines: 1,
+    textOverflow: "ellipsis",
   },
   header: {
     alignItems: "center",
@@ -38,6 +50,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 700,
     marginBottom: 2,
+    maxLines: 1,
+    textOverflow: "ellipsis",
   },
   page: {
     color: "black",
@@ -50,6 +64,8 @@ const styles = StyleSheet.create({
   roleDates: {
     color: "gray",
     fontSize: 8,
+    maxLines: 1,
+    textOverflow: "ellipsis",
   },
   roleHeader: {
     flexDirection: "row",
@@ -59,6 +75,8 @@ const styles = StyleSheet.create({
   roleMeta: {
     fontSize: 9,
     fontWeight: 700,
+    maxLines: 1,
+    textOverflow: "ellipsis",
   },
   section: {
     marginBottom: 10,
@@ -73,15 +91,21 @@ const styles = StyleSheet.create({
   skills: {
     fontSize: 8.5,
     lineHeight: 1.4,
+    maxLines: 3,
+    textOverflow: "ellipsis",
   },
   summary: {
     fontSize: 8.5,
     lineHeight: 1.4,
+    maxLines: 4,
+    textOverflow: "ellipsis",
   },
   title: {
     color: "gray",
     fontSize: 10,
     marginBottom: 3,
+    maxLines: 1,
+    textOverflow: "ellipsis",
   },
 });
 
@@ -106,6 +130,9 @@ function ResumeDocument({
 }): React.ReactNode {
   const generatedRoles = new Map(
     content.roles.map((role) => [role.roleIndex, role]),
+  );
+  const completeRoles = profile.workExperience.flatMap((role, roleIndex) =>
+    isCompleteWorkExperienceRole(role) ? [{ role, roleIndex }] : [],
   );
   const hasEducation = Object.values(profile.education).some((value) =>
     value.trim(),
@@ -139,13 +166,13 @@ function ResumeDocument({
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>SKILLS</Text>
           <Text style={styles.skills}>
-            {profile.skills.slice(0, 14).join("  •  ")}
+            {profile.skills.slice(0, 10).join("  •  ")}
           </Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>EXPERIENCE</Text>
-          {profile.workExperience.map((role, roleIndex) => {
+          {completeRoles.map(({ role, roleIndex }) => {
             const generatedRole = generatedRoles.get(roleIndex);
 
             return (

@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
-import type { ProfileViewModel } from "@/lib/profile";
+import {
+  isCompleteWorkExperienceRole,
+  type ProfileViewModel,
+} from "@/lib/profile";
 import {
   generatedResumeContentSchema,
   type GeneratedResumeContent,
@@ -20,9 +23,9 @@ const generationInstructions = `Create concise, professional resume content usin
 
 Rules:
 - Never invent or embellish employers, titles, dates, skills, responsibilities, metrics, achievements, education, or credentials.
-- Write a two-to-three sentence professional summary grounded in the supplied title, experience, skills, and work history.
+- Write a professional summary of at most 260 characters grounded in the supplied title, experience, skills, and work history.
 - Return exactly one roles entry for each supplied role, using its zero-based roleIndex.
-- Rewrite each role's responsibilities into one or two concise bullet points.
+- Rewrite each role's responsibilities into one or two concise bullet points of at most 120 characters each.
 - Preserve the meaning of the source responsibilities. Do not add numbers or outcomes that are not present.
 - Keep the wording compact enough for a single-page resume.
 - Do not mention job preferences, salary, work authorization, industries, or cover-letter tone.`;
@@ -31,10 +34,9 @@ export async function generateResumeContent(
   profile: ProfileViewModel,
 ): Promise<GenerateResumeResult> {
   try {
-    const sourceRoles = profile.workExperience.map((role, roleIndex) => ({
-      ...role,
-      roleIndex,
-    }));
+    const sourceRoles = profile.workExperience.flatMap((role, roleIndex) =>
+      isCompleteWorkExperienceRole(role) ? [{ ...role, roleIndex }] : [],
+    );
     const openai = new OpenAI();
     const response = await openai.responses.parse({
       input: [
